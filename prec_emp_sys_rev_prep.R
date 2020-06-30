@@ -32,8 +32,29 @@ mysheets <- read_excel_allsheets(filename = "./data/Prec_Emp_Data_Extract_202006
 ## covert list into dataframes in global environment
 list2env(mysheets, .GlobalEnv)
 
+## rename df's
+sr_log <- `SR log alpha` %>% as_tibble() %>% clean_names()
+study_desc <- `Study Description` %>% as_tibble() %>% clean_names()
+extraction <- Extraction %>% as_tibble() %>% clean_names()
+rob <- `Risk of Bias (EPHPP)` %>% as_tibble() %>% clean_names()
+  
+names(sr_log)
+names(study_desc)
+names(extraction)
+
 #------------------------------------------------------------------------------#
-##### Mental health #####
+##### Table - all grouped by outcomce grouping, and study
+#------------------------------------------------------------------------------#
+
+table_1 <- sr_log %>% full_join(study_desc, by = "study_record_id") %>% 
+  full_join(rob, by = "id") %>% 
+  select(c(study_record_id, id, data_source_s.x, first_author.x, year_published.x,
+           countries_included_in_study, study_design.x, sampling_frame, 
+           global_rating, exposure_measure_s, outcome_topic_s))
+
+
+#------------------------------------------------------------------------------#
+#####                              Mental health                           #####
 #------------------------------------------------------------------------------#
 
 MH <- MH %>% as_tibble(MH) %>% clean_names()
