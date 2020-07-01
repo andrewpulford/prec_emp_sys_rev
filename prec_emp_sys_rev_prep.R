@@ -46,7 +46,7 @@ names(extraction)
 ##### Table 1 - all grouped by outcomce grouping, and study
 #------------------------------------------------------------------------------#
 
-## high level overview by study for methds section
+#### high level overview by study for methods section ----------------
 
 table_1 <- sr_log %>% full_join(study_desc, by = "study_record_id") %>% 
   full_join(rob, by = "id") %>% 
@@ -64,6 +64,9 @@ write_xlsx(table_1, path = "output/table_1.xlsx")
 #------------------------------------------------------------------------------#
 ##### Table 2 - 
 #------------------------------------------------------------------------------#
+
+#### descriptive information grouped by outcome domain, exposure domain, 
+##### more specific outcome and exposure --------------------------------------
 
 ## create flags for each outcome group
 study_desc <- study_desc %>% mutate(gen_health = 
@@ -102,9 +105,22 @@ study_desc <- study_desc %>%
                                            "Underemployment"),
                                  1,0))
 
+table_2 <- study_desc %>% 
+  select(c(gen_health, mental_health, phys_health, exposure_topic,
+           first_author, year_published, definition_of_outcome_s)) %>% 
+  arrange(exposure_topic, first_author, year_published)
 
-  
+table_2_gen <- table_2 %>% 
+  filter(gen_health == 1) %>% 
+  select(-c(1:3))
 
+table_2_mh <- table_2 %>% 
+  filter(mental_health == 1) %>% 
+  select(-c(1:3))
+
+table_2_phys <- table_2 %>% 
+  filter(phys_health == 1) %>% 
+  select(-c(1:3))
 #------------------------------------------------------------------------------#
 #####                              Mental health                           #####
 #------------------------------------------------------------------------------#
