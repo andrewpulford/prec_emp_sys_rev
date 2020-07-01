@@ -43,15 +43,49 @@ names(study_desc)
 names(extraction)
 
 #------------------------------------------------------------------------------#
-##### Table - all grouped by outcomce grouping, and study
+##### Table 1 - all grouped by outcomce grouping, and study
 #------------------------------------------------------------------------------#
+
+## high level overview by study for methds section
 
 table_1 <- sr_log %>% full_join(study_desc, by = "study_record_id") %>% 
   full_join(rob, by = "id") %>% 
   select(c(study_record_id, id, data_source_s.x, first_author.x, year_published.x,
-           countries_included_in_study, study_design.x, sampling_frame, 
-           global_rating, exposure_measure_s, outcome_topic_s))
+           countries_included_in_study, study_design.x, study_population, 
+           global_rating, exposure_topic, outcome_topic_s)) %>% 
+  group_by(study_record_id) %>% 
+  mutate(study_row = row_number()) %>% 
+  ungroup() %>% 
+  select(-c(study_record_id, id))
 
+write_xlsx(table_1, path = "output/table_1.xlsx")
+
+
+#------------------------------------------------------------------------------#
+##### Table 2 - 
+#------------------------------------------------------------------------------#
+
+## create flags for each outcome group
+study_desc <- study_desc %>% mutate(gen_health = 
+                        ifelse(str_detect(outcome_topic_s, "General health"),
+                               1,0),
+                      mental_health = 
+                        ifelse(str_detect(outcome_topic_s, "Mental health"),
+                               1,0),
+                      phys_health = ifelse(str_detect(outcome_topic_s, "Physical health"),
+                                           1,0))
+
+
+## create flags for each exposure group
+study_desc$exposure_topic <- factor(study_desc$exposure_topic)
+
+#"Employment contract"    
+#"Employment spells"      
+#"Income volatility"      
+#"Layoff contact"         
+#"Multiple"               
+#"Perceived job security"
+#"Underemployment"
 
 #------------------------------------------------------------------------------#
 #####                              Mental health                           #####
