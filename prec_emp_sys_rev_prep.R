@@ -79,13 +79,31 @@ study_desc <- study_desc %>% mutate(gen_health =
 ## create flags for each exposure group
 study_desc$exposure_topic <- factor(study_desc$exposure_topic)
 
-#"Employment contract"    
-#"Employment spells"      
-#"Income volatility"      
-#"Layoff contact"         
-#"Multiple"               
-#"Perceived job security"
-#"Underemployment"
+study_desc <- study_desc %>% 
+  mutate(emp_contract = ifelse(str_detect(exposure_topic, 
+                                          "Employment contract"),
+                                 1,0),
+         emp_spells = ifelse(str_detect(exposure_topic,
+                                          "Employment spells"),
+                                 1,0),
+         inc_volatility = ifelse(str_detect(exposure_topic, 
+                                            "Income volatility"),
+                                 1,0),
+         layoff_contact = ifelse(str_detect(exposure_topic,
+                                            "Layoff contact"),
+                                 1,0),
+         multiple_exp = ifelse(str_detect(exposure_topic,
+                                          "Multiple"),
+                                 1,0),
+         job_insecurity = ifelse(str_detect(exposure_topic,
+                                            "Perceived job security"),
+                                 1,0),
+         underemployed = ifelse(str_detect(exposure_topic,
+                                           "Underemployment"),
+                                 1,0))
+
+
+  
 
 #------------------------------------------------------------------------------#
 #####                              Mental health                           #####
