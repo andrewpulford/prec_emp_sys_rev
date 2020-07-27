@@ -48,18 +48,52 @@ names(extraction)
 
 #### high level overview by study for methods section ----------------
 
-table_1 <- sr_log %>% full_join(study_desc, by = "study_record_id") %>% 
+table_1_raw <- sr_log %>% full_join(study_desc, by = "study_record_id") %>% 
   full_join(rob, by = "id") %>% 
   select(c(study_record_id, id, data_source_s.x, first_author.x, year_published.x,
            countries_included_in_study, study_design.x, study_population, 
            global_rating, exposure_topic, outcome_topic_s)) %>% 
   group_by(study_record_id) %>% 
-  mutate(study_row = row_number()) %>% 
+  mutate(study_row = row_number(), 
+         n_studies = n()) %>% 
   ungroup() %>% 
-  select(-c(study_record_id, id))
+  rename("study_id" = "study_record_id")
+
+ext_temp <- extraction %>% select(c(study_id, id, sample_size))
+  
+## temp df with studies that feature onky once
+table_1_single <- table_1_raw %>% 
+  filter(n_studies == 1)%>% 
+  select(-c(study_row, n_studies))
+
+## temp df with studies that feature more than once
+table_1_multiple <- table_1_raw %>% 
+  filter(n_studies>1) %>% 
+  left_join(ext_temp)  
+
+## temp df with studies to be retained (largest sample size)
+table_1_keep <- table_1_multiple %>% 
+  group_by(study_id) %>% 
+  slice(which.max(sample_size)) %>% 
+  ungroup() %>% 
+  select(-c(study_row, n_studies, sample_size)) %>% 
+  unique()
+
+## temp df with papers to be excluded as duplicates
+table_1_dups <- table_1_multiple %>% 
+  anti_join(table_1_keep) %>% 
+  select(-c(study_row, n_studies, sample_size)) %>% 
+  unique()
+
+## merge singles and jkeeps to create final table 1
+table_1 <- table_1_single %>% bind_rows(table_1_keep) %>% 
+  filter(study_id != "SR030") # remove as not in final set of studies
+
+table_1
 
 write_xlsx(table_1, path = "output/table_1.xlsx")
 
+final_id <- table_1$id
 
 #------------------------------------------------------------------------------#
 ##### Table 2 - 
@@ -69,7 +103,7 @@ write_xlsx(table_1, path = "output/table_1.xlsx")
 ##### more specific outcome and exposure --------------------------------------
 
 ## create flags for each outcome group
-study_desc <- study_desc %>% mutate(gen_health = 
+table_2_raw <- extraction %>% mutate(gen_health = 
                         ifelse(str_detect(outcome_topic_s, "General health"),
                                1,0),
                       mental_health = 
@@ -80,9 +114,15 @@ study_desc <- study_desc %>% mutate(gen_health =
 
 
 ## create flags for each exposure group
-study_desc$exposure_topic <- factor(study_desc$exposure_topic)
 
-study_desc <- study_desc %>% 
+exp_df <- study_desc %>% 
+  select(id, exposure_topic)
+
+table_2_raw <- table_2_raw %>% left_join(exp_df)
+
+table_2_raw$exposure_topic <- factor(table_2_raw$exposure_topic)
+
+table_2_raw <- table_2_raw %>% 
   mutate(emp_contract = ifelse(str_detect(exposure_topic, 
                                           "Employment contract"),
                                  1,0),
@@ -105,9 +145,11 @@ study_desc <- study_desc %>%
                                            "Underemployment"),
                                  1,0))
 
-table_2 <- study_desc %>% 
+
+table_2 <- table_2_raw %>% 
+  filter(id %in% final_id) %>% # keep only papers in Table 1
   select(c(gen_health, mental_health, phys_health, exposure_topic,
-           first_author, year_published, definition_of_outcome_s)) %>% 
+           first_author, year_published, definition_of_outcome)) %>% 
   arrange(exposure_topic, first_author, year_published)
 
 table_2_gen <- table_2 %>% 
@@ -126,13 +168,24 @@ table_2_phys <- table_2 %>%
 ##### Figure 1 - number of data points by exposure topic
 #------------------------------------------------------------------------------#
 
+extraction1 <- study_desc %>% select(c(id, study_design, exposure_topic)) %>% right_join(extraction)
+
+
+extraction1 %>% group_by(exposure_topic, study_design) %>% 
+  summarise(data_points = n()) %>% 
+  ggplot(aes(x=fct_reorder(exposure_topic, data_points), y=data_points, col = study_design, fill = study_design)) + 
+  geom_col() + 
+  coord_flip()
 
 #------------------------------------------------------------------------------#
 ##### Figure 2 - number of data points by outcome topic
 #------------------------------------------------------------------------------#
 
-extraction %>% ggplot(aes(x=outcome_topic_s, col = outcome_topic_s, fill = outcome_topic_s)) + 
-  geom_bar() + 
+
+extraction1 %>% group_by(outcome_topic_s, study_design) %>% 
+  summarise(data_points = n()) %>% 
+  ggplot(aes(x=fct_reorder(outcome_topic_s, data_points), y=data_points, col = study_design, fill = study_design)) + 
+  geom_col() + 
   coord_flip()
 
 
