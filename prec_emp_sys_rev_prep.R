@@ -27,7 +27,7 @@ read_excel_allsheets <- function(filename, tibble = TRUE) {
 }
 
 ## call function with extracted data
-mysheets <- read_excel_allsheets(filename = "./data/Prec_Emp_Data_Extract_20200623.xlsx")
+mysheets <- read_excel_allsheets(filename = "./data/Prec_Emp_Data_Extract_20200729.xlsx")
 
 ## covert list into dataframes in global environment
 list2env(mysheets, .GlobalEnv)
@@ -42,26 +42,39 @@ names(sr_log)
 names(study_desc)
 names(extraction)
 
+## get study_id name consistent across df's
+sr_log <- sr_log %>% rename("study_id" = "study_record_id")
+study_desc <- study_desc %>% rename("study_id" = "study_record_id")
+
+
+rm(mysheets, `SR log`, `SR log alpha`, Extraction, `Study Description`, `Risk of Bias (EPHPP)`)
+rm(MH, `Notes - study description`, `Notes - extraction`, `Notes - risk of bias`)
+
 #------------------------------------------------------------------------------#
-##### Table 1 - all grouped by outcomce grouping, and study
+##### Table 1 - all grouped by outcome grouping, and study
 #------------------------------------------------------------------------------#
 
 #### high level overview by study for methods section ----------------
 
-table_1_raw <- sr_log %>% full_join(study_desc, by = "study_record_id") %>% 
-  full_join(rob, by = "id") %>% 
-  select(c(study_record_id, id, data_source_s.x, first_author.x, year_published.x,
+table_1_raw <- sr_log %>% full_join(study_desc, by = "study_id") %>% 
+  full_join(rob, by = c("study_id", "id")) %>% 
+  select(c(study_id, id, data_source_s.x, first_author.x, year_published.x,
            countries_included_in_study, study_design.x, study_population, 
            global_rating, exposure_topic, outcome_topic_s)) %>% 
-  group_by(study_record_id) %>% 
+  group_by(study_id) %>% 
   mutate(study_row = row_number(), 
          n_studies = n()) %>% 
   ungroup() %>% 
-  rename("study_id" = "study_record_id")
+  rename("study_id" = "study_id")
 
+
+#### check studies with multiple papers  
+table_1_raw <- table_1_raw 
+
+## temp df with vars needed from extraction template
 ext_temp <- extraction %>% select(c(study_id, id, sample_size))
   
-## temp df with studies that feature onky once
+## temp df with studies that feature only once
 table_1_single <- table_1_raw %>% 
   filter(n_studies == 1)%>% 
   select(-c(study_row, n_studies))
@@ -87,13 +100,14 @@ table_1_dups <- table_1_multiple %>%
 
 ## merge singles and jkeeps to create final table 1
 table_1 <- table_1_single %>% bind_rows(table_1_keep) %>% 
-  filter(study_id != "SR030") # remove as not in final set of studies
+  filter(study_id != "SR030") %>% # remove as not in final set of studies
+  arrange(data_source_s.x)
 
 table_1
 
 write_xlsx(table_1, path = "output/table_1.xlsx")
 
-final_id <- table_1$id
+final_id <- table_1$id # vector of ID numbers for final analysis
 
 #------------------------------------------------------------------------------#
 ##### Table 2 - 
@@ -116,7 +130,7 @@ table_2_raw <- extraction %>% mutate(gen_health =
 ## create flags for each exposure group
 
 exp_df <- study_desc %>% 
-  select(id, exposure_topic)
+  select(id, exposure_topic, study_population, study_design)
 
 table_2_raw <- table_2_raw %>% left_join(exp_df)
 
@@ -148,32 +162,66 @@ table_2_raw <- table_2_raw %>%
 
 table_2 <- table_2_raw %>% 
   filter(id %in% final_id) %>% # keep only papers in Table 1
-  select(c(gen_health, mental_health, phys_health, exposure_topic,
-           first_author, year_published, definition_of_outcome)) %>% 
+  select(c(first_author, year_published, gen_health, mental_health, phys_health, 
+           age_cat, sex, study_population, exposure_group, exposure_topic, 
+           comparator_group, definition_of_outcome, study_design)) %>% 
   arrange(exposure_topic, first_author, year_published)
+
+table_2$age_group <- factor(table_2$age_group)
+table_2$comparator_group <- factor(table_2$comparator_group)
+
 
 table_2_gen <- table_2 %>% 
   filter(gen_health == 1) %>% 
-  select(-c(1:3))
+  select(-c(3:5)) %>% 
+  group_by(sex, exposure_topic, definition_of_outcome, study_design) %>% 
+  summarise(data_points = n()) %>% 
+  ungroup()
 
 table_2_mh <- table_2 %>% 
   filter(mental_health == 1) %>% 
-  select(-c(1:3))
+  select(-c(3:5)) %>% 
+  group_by(sex, exposure_topic, definition_of_outcome, study_design) %>% 
+  summarise(data_points = n()) %>% 
+  ungroup()
 
 table_2_phys <- table_2 %>% 
   filter(phys_health == 1) %>% 
-  select(-c(1:3))
+  select(-c(3:5)) %>% 
+  group_by(sex, exposure_topic, definition_of_outcome, study_design) %>% 
+  summarise(data_points = n()) %>% 
+  ungroup()
+
+write_xlsx(table_2_gen, path = "output/table_2_gen.xlsx")
+write_xlsx(table_2_mh, path = "output/table_2_mh.xlsx")
+write_xlsx(table_2_phys, path = "output/table_2_phys.xlsx")
+
 
 #------------------------------------------------------------------------------#
 ##### Figure 1 - number of data points by exposure topic
 #------------------------------------------------------------------------------#
 
-extraction1 <- study_desc %>% select(c(id, study_design, exposure_topic)) %>% right_join(extraction)
+study_desc_dedup <- study_desc %>% 
+  filter(id %in% final_id) %>% # keep only papers in Table 1
+  select(c(id, study_design, exposure_topic)) 
 
+exc_dedup <- extraction %>% 
+  filter(id %in% final_id) # keep only papers in Table 1
+  
+extraction1 <- exc_dedup %>% 
+left_join(study_desc_dedup)
 
-extraction1 %>% group_by(exposure_topic, study_design) %>% 
+extraction1$exposure_topic <- factor(extraction1$exposure_topic)
+
+extraction1 %>% 
+  group_by(exposure_topic) %>% 
+  mutate(dp_total = n()) %>% 
+  ungroup() %>% 
+  mutate(exposure_topic = fct_reorder(exposure_topic, dp_total)) %>% 
+  group_by(exposure_topic, study_design) %>% 
   summarise(data_points = n()) %>% 
-  ggplot(aes(x=fct_reorder(exposure_topic, data_points), y=data_points, col = study_design, fill = study_design)) + 
+  ungroup() %>% 
+  ggplot(aes(x=exposure_topic, y=data_points, col = study_design, fill = study_design)) + 
   geom_col() + 
   coord_flip()
 
@@ -183,13 +231,22 @@ extraction1 %>% group_by(exposure_topic, study_design) %>%
 
 
 extraction1 %>% group_by(outcome_topic_s, study_design) %>% 
+  group_by(outcome_topic_s) %>% 
+  mutate(dp_total = n()) %>% 
+  ungroup() %>% 
+  mutate(outcome_topic_s = fct_reorder(outcome_topic_s, dp_total)) %>% 
+  group_by(outcome_topic_s, study_design) %>% 
   summarise(data_points = n()) %>% 
-  ggplot(aes(x=fct_reorder(outcome_topic_s, data_points), y=data_points, col = study_design, fill = study_design)) + 
+  ungroup() %>% 
+  ggplot(aes(x=outcome_topic_s, y=data_points, col = study_design, fill = study_design)) + 
   geom_col() + 
   coord_flip()
 
 
 
+################################################################################
+################################################################################
+################################################################################
 #------------------------------------------------------------------------------#
 #####                              Mental health                           #####
 #------------------------------------------------------------------------------#
