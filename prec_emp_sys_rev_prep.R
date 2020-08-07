@@ -68,7 +68,7 @@ table_1_raw <- sr_log %>% full_join(study_desc, by = "study_id") %>%
   rename("study_id" = "study_id")
 
 
-#### check studies with multiple papers  
+#### check studies with multiple papers  <<< here <<<
 table_1_raw <- table_1_raw 
 
 ## temp df with vars needed from extraction template
@@ -105,9 +105,9 @@ table_1 <- table_1_single %>% bind_rows(table_1_keep) %>%
 
 table_1
 
-write_xlsx(table_1, path = "output/table_1.xlsx")
+#write_xlsx(table_1, path = "output/table_1.xlsx")
 
-final_id <- table_1$id # vector of ID numbers for final analysis
+#final_id <- table_1$id # vector of ID numbers for final analysis
 
 #------------------------------------------------------------------------------#
 ##### Table 2 - 
@@ -161,16 +161,31 @@ table_2_raw <- table_2_raw %>%
 
 
 table_2 <- table_2_raw %>% 
-  filter(id %in% final_id) %>% # keep only papers in Table 1
-  select(c(first_author, year_published, gen_health, mental_health, phys_health, 
-           age_cat, sex, study_population, exposure_group, exposure_topic, 
+#  filter(id %in% final_id) %>% # keep only papers in Table 1
+  select(c(study_id, first_author, year_published, gen_health, mental_health, phys_health, 
+           age_cat, sample_size, sex, study_population, exposure_group, exposure_topic, 
            comparator_group, definition_of_outcome, study_design)) %>% 
   arrange(exposure_topic, first_author, year_published)
 
-table_2$age_group <- factor(table_2$age_group)
+table_2$study_id <- factor(table_2$study_id)
+table_2$age_cat <- factor(table_2$age_cat)
 table_2$comparator_group <- factor(table_2$comparator_group)
 
 
+table_2 <- table_2 %>% group_by(study_id, definition_of_outcome) %>% 
+  mutate(dp_row = row_number(), 
+         n_dp = n()) %>% 
+  ungroup() %>% 
+  arrange(study_id, definition_of_outcome)
+
+test <- table_2 %>% group_split(study_id)
+names(test) <- levels(table_2$study_id)
+
+lapply(names(test),function(x) assign(x,test[[x]],.GlobalEnv))
+
+write_xlsx(test, paste0("./data/working/table-2_dedup.xlsx"))
+
+##########################
 table_2_gen <- table_2 %>% 
   filter(gen_health == 1) %>% 
   select(-c(3:5)) %>% 
