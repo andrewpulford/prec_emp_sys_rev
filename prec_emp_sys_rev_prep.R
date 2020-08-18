@@ -185,6 +185,35 @@ lapply(names(test),function(x) assign(x,test[[x]],.GlobalEnv))
 
 write_xlsx(test, paste0("./data/working/table-2_dedup.xlsx"))
 
+########## NOTE - duplicate cases coded manually in Excel: dated 20200807
+## Coding:
+## 0 == keep
+## 1 == duplicate (remove)
+## 2 == duplicate for sensitivity analysis
+## 3 == keep (pool sexes)
+
+## call function with extracted data
+mysheets2 <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20200807.xlsx")
+
+## covert list into dataframes in global environment - don't think needed
+#list2env(mysheets2, .GlobalEnv)
+
+## convert list in single df
+tab2_dedup <- bind_rows(mysheets2)
+
+## create df for dupliacte data points to be considered for sensitivity analysis/stratified 
+## (dup_flag == 2 or 3)
+tab2_sa <- tab2_dedup %>% filter(dup_flag == 2 | dup_flag == 3)
+### add save command
+
+## create main deduped table 2 df
+tab2_dedup0 <- tab2_dedup %>% filter(dup_flag == 0) ## keep
+tab2_dedup3 <- tab2_dedup %>% filter(dup_flag == 3) ## pool by sex before merging back into df
+
+tab2_dedup3 <- tab2_dedup3 %>% 
+  group_by(-c(sex, dp_row)) %>% 
+
+
 ##########################
 table_2_gen <- table_2 %>% 
   filter(gen_health == 1) %>% 
