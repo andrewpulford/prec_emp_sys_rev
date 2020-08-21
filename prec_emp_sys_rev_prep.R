@@ -190,7 +190,7 @@ write_xlsx(test, paste0("./data/working/table-2_dedup.xlsx"))
 ## 0 == keep
 ## 1 == duplicate (remove)
 ## 2 == duplicate for sensitivity analysis
-## 3 == keep (pool sexes)
+## 3 == keep (sex specific)
 
 ## call function with extracted data
 mysheets2 <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20200807.xlsx")
@@ -204,37 +204,27 @@ tab2_dedup <- bind_rows(mysheets2)
 ## create df for dupliacte data points to be considered for sensitivity analysis/stratified 
 ## (dup_flag == 2 or 3)
 tab2_sa <- tab2_dedup %>% filter(dup_flag == 2 | dup_flag == 3)
-### add save command
+### add save command for later use <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 ## create main deduped table 2 df
-tab2_dedup0 <- tab2_dedup %>% filter(dup_flag == 0) ## keep
-tab2_dedup3 <- tab2_dedup %>% filter(dup_flag == 3) ## pool by sex before merging back into df
+table_2 <- tab2_dedup %>% filter(dup_flag == 0 | dup_flag == 3) %>% as_tibble()
 
-tab2_dedup3 <- tab2_dedup3 %>% 
-  group_by(-c(sex, dp_row)) %>% 
+## check how many studies still included
+levels(factor(tab2_dedup$study_id))
 
 
 ##########################
 table_2_gen <- table_2 %>% 
   filter(gen_health == 1) %>% 
-  select(-c(3:5)) %>% 
-  group_by(sex, exposure_topic, definition_of_outcome, study_design) %>% 
-  summarise(data_points = n()) %>% 
-  ungroup()
+  select(-c(4:6, 16:18)) 
 
 table_2_mh <- table_2 %>% 
   filter(mental_health == 1) %>% 
-  select(-c(3:5)) %>% 
-  group_by(sex, exposure_topic, definition_of_outcome, study_design) %>% 
-  summarise(data_points = n()) %>% 
-  ungroup()
+  select(-c(4:6, 16:18)) 
 
 table_2_phys <- table_2 %>% 
   filter(phys_health == 1) %>% 
-  select(-c(3:5)) %>% 
-  group_by(sex, exposure_topic, definition_of_outcome, study_design) %>% 
-  summarise(data_points = n()) %>% 
-  ungroup()
+  select(-c(4:6, 16:18)) 
 
 write_xlsx(table_2_gen, path = "output/table_2_gen.xlsx")
 write_xlsx(table_2_mh, path = "output/table_2_mh.xlsx")
