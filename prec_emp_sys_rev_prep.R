@@ -230,6 +230,28 @@ write_xlsx(table_2_gen, path = "output/table_2_gen.xlsx")
 write_xlsx(table_2_mh, path = "output/table_2_mh.xlsx")
 write_xlsx(table_2_phys, path = "output/table_2_phys.xlsx")
 
+## create flag for dp's to include
+table_2$include <- 1
+# remove unneccesary vars
+table_2 <- table_2 %>% select(-c(dp_row, n_dp, dup_flag))
+
+## create dataframe of data points for use in main analysis
+## needs a bit of checking re missing values
+dp_review <- table_2 %>% 
+  left_join(extraction) %>% 
+filter(include == 1)
+
+#------------------------------------------------------------------------------#
+##### Figure 1 - number of data points by exposure topic
+#------------------------------------------------------------------------------#
+
+##### Mental health --------------
+
+## create a temporary df with all exposure/outcome combinations
+df_temp <- expand.grid(table_2_mh$exposure_topic, table_2_mh$outcome_cat)
+names(df_temp) <- c("exposure_topic", "outcome_cat")
+df_temp$data_points <- 0
+  
 
 table_2_mh <- read_xlsx("./output/table_2_mh_20200824.xlsx")
 
@@ -239,20 +261,6 @@ table_2_mh <- table_2_mh %>% select(-c(sex, definition_of_outcome)) %>%
   ungroup() %>% 
   arrange(desc(data_points))
 
-
-
-#------------------------------------------------------------------------------#
-##### Figure 1 - number of data points by exposure topic
-#------------------------------------------------------------------------------#
-
-
-## create a temporary df with all exposure/outcome combinations
-df_temp <- expand.grid(table_2_mh$exposure_topic, table_2_mh$outcome_cat)
-names(df_temp) <- c("exposure_topic", "outcome_cat")
-df_temp$data_points <- 0
-  
-##### Mental health --------------
-
 fig1_mh <- table_2_mh %>%
   select(-study_design) %>%
   bind_rows(df_temp) %>% 
@@ -261,19 +269,21 @@ fig1_mh <- table_2_mh %>%
   ungroup()
   
 fig1_mh %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
-  geom_tile() +
+  geom_tile(col="light grey") +
   coord_fixed() +
   theme_classic()+
-  scale_fill_gradient(low="white", high="red", name="legend",
+  scale_fill_gradient(low="white", high="red", name="Number of data points",
                       labels = c(1, 3, 5, 7, 9),
                       breaks = c(1, 3, 5, 7, 9)) +
-  theme(axis.line.y=element_blank(), 
+  labs(x = "Outcome category", y = "Exposure category") +
+  theme(axis.line.y=element_blank(),
+        axis.line.x=element_blank(),
         plot.subtitle=element_text(size=rel(0.78)), 
         plot.title.position="plot",
         axis.text.y=element_text(colour="Black"),
         legend.position = "left",
         legend.justification = "top",
-        axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))
+        axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))  
 
 ################################################################################
 study_desc_dedup <- study_desc %>% 
