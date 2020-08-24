@@ -231,10 +231,51 @@ write_xlsx(table_2_mh, path = "output/table_2_mh.xlsx")
 write_xlsx(table_2_phys, path = "output/table_2_phys.xlsx")
 
 
+table_2_mh <- read_xlsx("./output/table_2_mh_20200824.xlsx")
+
+table_2_mh <- table_2_mh %>% select(-c(sex, definition_of_outcome)) %>% 
+  group_by(exposure_topic, outcome_cat, study_design) %>% 
+  summarise(data_points = sum(data_points)) %>% 
+  ungroup() %>% 
+  arrange(desc(data_points))
+
+
+
 #------------------------------------------------------------------------------#
 ##### Figure 1 - number of data points by exposure topic
 #------------------------------------------------------------------------------#
 
+
+## create a temporary df with all exposure/outcome combinations
+df_temp <- expand.grid(table_2_mh$exposure_topic, table_2_mh$outcome_cat)
+names(df_temp) <- c("exposure_topic", "outcome_cat")
+df_temp$data_points <- 0
+  
+##### Mental health --------------
+
+fig1_mh <- table_2_mh %>%
+  select(-study_design) %>%
+  bind_rows(df_temp) %>% 
+  group_by(exposure_topic, outcome_cat) %>% 
+  summarise(data_points = sum(data_points)) %>% 
+  ungroup()
+  
+fig1_mh %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
+  geom_tile() +
+  coord_fixed() +
+  theme_classic()+
+  scale_fill_gradient(low="white", high="red", name="legend",
+                      labels = c(1, 3, 5, 7, 9),
+                      breaks = c(1, 3, 5, 7, 9)) +
+  theme(axis.line.y=element_blank(), 
+        plot.subtitle=element_text(size=rel(0.78)), 
+        plot.title.position="plot",
+        axis.text.y=element_text(colour="Black"),
+        legend.position = "left",
+        legend.justification = "top",
+        axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))
+
+################################################################################
 study_desc_dedup <- study_desc %>% 
   filter(id %in% final_id) %>% # keep only papers in Table 1
   select(c(id, study_design, exposure_topic)) 
