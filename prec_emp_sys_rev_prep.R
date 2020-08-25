@@ -269,7 +269,7 @@ fig1_mh <- table_2_mh %>%
   ungroup()
   
 fig1_mh %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
-  geom_tile(col="light grey") +
+  geom_tile(col="grey") +
   coord_fixed() +
   theme_classic()+
   scale_fill_gradient(low="white", high="red", name="Number of data points",
