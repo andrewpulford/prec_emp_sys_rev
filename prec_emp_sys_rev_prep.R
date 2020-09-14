@@ -27,7 +27,8 @@ read_excel_allsheets <- function(filename, tibble = TRUE) {
 }
 
 ## call function with extracted data
-mysheets <- read_excel_allsheets(filename = "./data/Prec_Emp_Data_Extract_20200729.xlsx")
+#mysheets <- read_excel_allsheets(filename = "./data/Prec_Emp_Data_Extract_20200729.xlsx") # previous version
+mysheets <- read_excel_allsheets(filename = "./data/Prec_Emp_Data_Extract_20200825.xlsx")
 
 ## covert list into dataframes in global environment
 list2env(mysheets, .GlobalEnv)
@@ -56,58 +57,19 @@ rm(MH, `Notes - study description`, `Notes - extraction`, `Notes - risk of bias`
 
 #### high level overview by study for methods section ----------------
 
-table_1_raw <- sr_log %>% full_join(study_desc, by = "study_id") %>% 
+table_1 <- sr_log %>% full_join(study_desc, by = "study_id") %>% 
   full_join(rob, by = c("study_id", "id")) %>% 
   select(c(study_id, id, data_source_s.x, first_author.x, year_published.x,
            countries_included_in_study, study_design.x, study_population, 
            global_rating, exposure_topic, outcome_topic_s)) %>% 
-  group_by(study_id) %>% 
-  mutate(study_row = row_number(), 
-         n_studies = n()) %>% 
-  ungroup() %>% 
-  rename("study_id" = "study_id")
-
-
-#### check studies with multiple papers  <<< here <<<
-table_1_raw <- table_1_raw 
-
-## temp df with vars needed from extraction template
-ext_temp <- extraction %>% select(c(study_id, id, sample_size))
-  
-## temp df with studies that feature only once
-table_1_single <- table_1_raw %>% 
-  filter(n_studies == 1)%>% 
-  select(-c(study_row, n_studies))
-
-## temp df with studies that feature more than once
-table_1_multiple <- table_1_raw %>% 
-  filter(n_studies>1) %>% 
-  left_join(ext_temp)  
-
-## temp df with studies to be retained (largest sample size)
-table_1_keep <- table_1_multiple %>% 
-  group_by(study_id) %>% 
-  slice(which.max(sample_size)) %>% 
-  ungroup() %>% 
-  select(-c(study_row, n_studies, sample_size)) %>% 
-  unique()
-
-## temp df with papers to be excluded as duplicates
-table_1_dups <- table_1_multiple %>% 
-  anti_join(table_1_keep) %>% 
-  select(-c(study_row, n_studies, sample_size)) %>% 
-  unique()
-
-## merge singles and jkeeps to create final table 1
-table_1 <- table_1_single %>% bind_rows(table_1_keep) %>% 
+  rename("study_id" = "study_id") %>% 
   filter(study_id != "SR030") %>% # remove as not in final set of studies
   arrange(data_source_s.x)
 
-table_1
 
-#write_xlsx(table_1, path = "output/table_1.xlsx")
+write_xlsx(table_1, path = "output/table_1.xlsx")
 
-#final_id <- table_1$id # vector of ID numbers for final analysis
+final_id <- table_1$id # vector of ID numbers for final analysis
 
 #------------------------------------------------------------------------------#
 ##### Table 2 - 
