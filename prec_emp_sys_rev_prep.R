@@ -52,41 +52,22 @@ rm(mysheets, `SR log`, `SR log alpha`, Extraction, `Study Description`, `Risk of
 rm(MH, `Notes - study description`, `Notes - extraction`, `Notes - risk of bias`)
 
 #------------------------------------------------------------------------------#
-##### Table 1 - all grouped by outcome grouping, and study
-#------------------------------------------------------------------------------#
-
-#### high level overview by study for methods section ----------------
-
-table_1 <- sr_log %>% full_join(study_desc, by = "study_id") %>% 
-  full_join(rob, by = c("study_id", "id")) %>% 
-  select(c(study_id, id, data_source_s.x, first_author.x, year_published.x,
-           countries_included_in_study, study_design.x, study_population, 
-           global_rating, exposure_topic, outcome_topic_s)) %>% 
-  rename("study_id" = "study_id") %>% 
-  filter(study_id != "SR030") %>% # remove as not in final set of studies
-  arrange(data_source_s.x)
-
-
-write_xlsx(table_1, path = "output/table_1.xlsx")
-
-final_id <- table_1$id # vector of ID numbers for final analysis
-
-#------------------------------------------------------------------------------#
 ##### Table 2 - 
 #------------------------------------------------------------------------------#
 
 #### descriptive information grouped by outcome domain, exposure domain, 
 ##### more specific outcome and exposure --------------------------------------
+##### code befiore table 1 to dedup and get vector of final record ids
 
 ## create flags for each outcome group
 table_2_raw <- extraction %>% mutate(gen_health = 
-                        ifelse(str_detect(outcome_topic_s, "General health"),
-                               1,0),
-                      mental_health = 
-                        ifelse(str_detect(outcome_topic_s, "Mental health"),
-                               1,0),
-                      phys_health = ifelse(str_detect(outcome_topic_s, "Physical health"),
-                                           1,0))
+                                       ifelse(str_detect(outcome_topic_s, "General health"),
+                                              1,0),
+                                     mental_health = 
+                                       ifelse(str_detect(outcome_topic_s, "Mental health"),
+                                              1,0),
+                                     phys_health = ifelse(str_detect(outcome_topic_s, "Physical health"),
+                                                          1,0))
 
 
 ## create flags for each exposure group
@@ -101,10 +82,10 @@ table_2_raw$exposure_topic <- factor(table_2_raw$exposure_topic)
 table_2_raw <- table_2_raw %>% 
   mutate(emp_contract = ifelse(str_detect(exposure_topic, 
                                           "Employment contract"),
-                                 1,0),
+                               1,0),
          emp_spells = ifelse(str_detect(exposure_topic,
-                                          "Employment spells"),
-                                 1,0),
+                                        "Employment spells"),
+                             1,0),
          inc_volatility = ifelse(str_detect(exposure_topic, 
                                             "Income volatility"),
                                  1,0),
@@ -113,18 +94,18 @@ table_2_raw <- table_2_raw %>%
                                  1,0),
          multiple_exp = ifelse(str_detect(exposure_topic,
                                           "Multiple"),
-                                 1,0),
+                               1,0),
          job_insecurity = ifelse(str_detect(exposure_topic,
                                             "Perceived job security"),
                                  1,0),
          underemployed = ifelse(str_detect(exposure_topic,
                                            "Underemployment"),
-                                 1,0))
+                                1,0))
 
 
 table_2 <- table_2_raw %>% 
-#  filter(id %in% final_id) %>% # keep only papers in Table 1
-  select(c(study_id, first_author, year_published, gen_health, mental_health, phys_health, 
+  #  filter(id %in% final_id) %>% # keep only papers in Table 1
+  select(c(study_id, id, first_author, year_published, gen_health, mental_health, phys_health, 
            age_cat, sample_size, sex, study_population, exposure_group, exposure_topic, 
            comparator_group, definition_of_outcome, study_design)) %>% 
   arrange(exposure_topic, first_author, year_published)
@@ -163,6 +144,11 @@ mysheets2 <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20200
 ## convert list in single df
 tab2_dedup <- bind_rows(mysheets2)
 
+## add id id - shouldn't have been removed
+table_2 <- table_2 %>% select(c(study_id, id, first_author, year_published))
+tab2_dedup <- tab2_dedup %>% left_join(table_2, by = c("study_id", "first_author", "year_published")) %>% 
+  unique()
+
 ## create df for dupliacte data points to be considered for sensitivity analysis/stratified 
 ## (dup_flag == 2 or 3)
 tab2_sa <- tab2_dedup %>% filter(dup_flag == 2 | dup_flag == 3)
@@ -173,6 +159,11 @@ table_2 <- tab2_dedup %>% filter(dup_flag == 0 | dup_flag == 3) %>% as_tibble()
 
 ## check how many studies still included
 levels(factor(tab2_dedup$study_id))
+
+### create vector of ID numbers for final analysis -------------------- 
+final_id <- unique(table_2$study_id) 
+
+##### table 2 not how it used to be!!
 
 
 ##########################
@@ -201,7 +192,27 @@ table_2 <- table_2 %>% select(-c(dp_row, n_dp, dup_flag))
 ## needs a bit of checking re missing values
 dp_review <- table_2 %>% 
   left_join(extraction) %>% 
-filter(include == 1)
+  filter(include == 1)
+
+#------------------------------------------------------------------------------#
+##### Table 1 - all grouped by outcome grouping, and study
+#------------------------------------------------------------------------------#
+
+#### high level overview by study for methods section ----------------
+
+table_1 <- sr_log %>% full_join(study_desc, by = "study_id") %>% 
+  full_join(rob, by = c("study_id", "id")) %>% 
+  select(c(study_id, id, data_source_s.x, first_author.x, year_published.x,
+           countries_included_in_study, study_design.x, study_population, 
+           global_rating, exposure_topic, outcome_topic_s)) %>% 
+  rename("study_id" = "study_id") %>% 
+  filter(study_id != "SR030") %>% # remove as not in final set of studies
+  arrange(data_source_s.x)
+
+
+write_xlsx(table_1, path = "output/table_1.xlsx")
+
+
 
 #------------------------------------------------------------------------------#
 ##### Figure 1 - number of data points by exposure topic
