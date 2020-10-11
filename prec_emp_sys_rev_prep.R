@@ -51,8 +51,15 @@ study_desc <- study_desc %>% rename("study_id" = "study_record_id")
 rm(mysheets, `SR log`, `SR log alpha`, Extraction, `Study Description`, `Risk of Bias (EPHPP)`)
 rm(MH, `Notes - study description`, `Notes - extraction`, `Notes - risk of bias`)
 
+## check study_desc and rob contain same records
+sd_check <- study_desc %>% select(study_id, id, first_author)%>% unique()
+rob_check <- rob %>% select(study_id, id, first_author)%>% unique()
+sd_check %>% anti_join(rob_check)
+
+ext_check <- extraction %>% select(study_id, id, first_author) %>% unique()
+
 #------------------------------------------------------------------------------#
-##### Table 2 - 
+##### Extracted data - final set for synthesis 
 #------------------------------------------------------------------------------#
 
 #### descriptive information grouped by outcome domain, exposure domain, 
@@ -60,13 +67,15 @@ rm(MH, `Notes - study description`, `Notes - extraction`, `Notes - risk of bias`
 ##### code befiore table 1 to dedup and get vector of final record ids
 
 ## create flags for each outcome group
-table_2_raw <- extraction %>% mutate(gen_health = 
+ext_fin <- extraction %>% mutate(gen_health = 
                                        ifelse(str_detect(outcome_topic_s, "General health"),
                                               1,0),
                                      mental_health = 
                                        ifelse(str_detect(outcome_topic_s, "Mental health"),
                                               1,0),
                                      phys_health = ifelse(str_detect(outcome_topic_s, "Physical health"),
+                                                          1,0),
+                                     health_behav = ifelse(str_detect(outcome_topic_s, "Health behaviours"),
                                                           1,0))
 
 
@@ -75,11 +84,11 @@ table_2_raw <- extraction %>% mutate(gen_health =
 exp_df <- study_desc %>% 
   select(id, exposure_topic, study_population, study_design)
 
-table_2_raw <- table_2_raw %>% left_join(exp_df)
+ext_fin <- ext_fin %>% left_join(exp_df)
 
-table_2_raw$exposure_topic <- factor(table_2_raw$exposure_topic)
+ext_fin$exposure_topic <- factor(ext_fin$exposure_topic)
 
-table_2_raw <- table_2_raw %>% 
+ext_fin <- ext_fin %>% 
   mutate(emp_contract = ifelse(str_detect(exposure_topic, 
                                           "Employment contract"),
                                1,0),
@@ -103,10 +112,30 @@ table_2_raw <- table_2_raw %>%
                                 1,0))
 
 
-table_2 <- table_2_raw %>% 
+ext_fin <- ext_fin %>%mutate(dp_id = paste0("dp",row_number()))
+
+ext_fin <- ext_fin %>% group_by(study_id, definition_of_outcome) %>% 
+  mutate(dp_row = row_number(), 
+         n_dp = n()) %>% 
+  ungroup() %>% 
+  arrange(study_id, definition_of_outcome)
+
+ext_fin <- ext_fin %>% group_split(study_id)
+names(test) <- levels(ext_fin$study_id)
+
+lapply(names(test),function(x) assign(x,test[[x]],.GlobalEnv))
+
+write_xlsx(test, paste0("./data/working/table-2_dedup.xlsx"))
+
+
+
+#######################
+table_2 <- table_2 %>% 
   #  filter(id %in% final_id) %>% # keep only papers in Table 1
-  select(c(study_id, id, first_author, year_published, gen_health, mental_health, phys_health, 
-           age_cat, sample_size, sex, study_population, exposure_group, exposure_topic, 
+  select(c(study_id, id, dp_id, first_author, year_published, 
+           gen_health, mental_health, phys_health, health_behav,
+           age_cat, sample_size, sex, study_population, 
+           exposure_group, exposure_topic, 
            comparator_group, definition_of_outcome, study_design)) %>% 
   arrange(exposure_topic, first_author, year_published)
 
@@ -115,18 +144,7 @@ table_2$age_cat <- factor(table_2$age_cat)
 table_2$comparator_group <- factor(table_2$comparator_group)
 
 
-table_2 <- table_2 %>% group_by(study_id, definition_of_outcome) %>% 
-  mutate(dp_row = row_number(), 
-         n_dp = n()) %>% 
-  ungroup() %>% 
-  arrange(study_id, definition_of_outcome)
 
-test <- table_2 %>% group_split(study_id)
-names(test) <- levels(table_2$study_id)
-
-lapply(names(test),function(x) assign(x,test[[x]],.GlobalEnv))
-
-write_xlsx(test, paste0("./data/working/table-2_dedup.xlsx"))
 
 ########## NOTE - duplicate cases coded manually in Excel: dated 20200807
 ## Coding:
