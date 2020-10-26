@@ -51,12 +51,30 @@ study_desc <- study_desc %>% rename("study_id" = "study_record_id")
 rm(mysheets, `SR log`, `SR log alpha`, Extraction, `Study Description`, `Risk of Bias (EPHPP)`)
 rm(MH, `Notes - study description`, `Notes - extraction`, `Notes - risk of bias`)
 
+extraction$id <- as.numeric(extraction$id)
+rob$id <- as.numeric(rob$id)
+
 ## check study_desc and rob contain same records
 sd_check <- study_desc %>% select(study_id, id, first_author)%>% unique()
 rob_check <- rob %>% select(study_id, id, first_author)%>% unique()
 sd_check %>% anti_join(rob_check)
 
 ext_check <- extraction %>% select(study_id, id, first_author) %>% unique()
+
+ext_check %>% anti_join(sd_check) %>% anti_join(rob)
+
+
+## not needed
+#study_desc <- study_desc %>% mutate(gen_health = 
+#                                   ifelse(str_detect(outcome_topic_s, "General health"),
+#                                          1,0),
+#                                 mental_health = 
+#                                   ifelse(str_detect(outcome_topic_s, "Mental health"),
+#                                          1,0),
+#                                 phys_health = ifelse(str_detect(outcome_topic_s, "Physical health"),
+#                                                      1,0),
+#                                 health_behav = ifelse(str_detect(outcome_topic_s, "Health behaviours"),
+#                                                       1,0))
 
 #------------------------------------------------------------------------------#
 ##### Extracted data - final set for synthesis 
@@ -82,9 +100,9 @@ ext_fin <- extraction %>% mutate(gen_health =
 ## create flags for each exposure group
 
 exp_df <- study_desc %>% 
-  select(id, exposure_topic, study_population, study_design)
+  select(study_id, id, exposure_topic, study_population, study_design,)
 
-ext_fin <- ext_fin %>% left_join(exp_df)
+ext_fin <- ext_fin %>% left_join(exp_df, by = c("study_id", "id"))
 
 ext_fin$exposure_topic <- factor(ext_fin$exposure_topic)
 
@@ -112,22 +130,48 @@ ext_fin <- ext_fin %>%
                                 1,0))
 
 
+## create dp identfier
 ext_fin <- ext_fin %>%mutate(dp_id = paste0("dp",row_number()))
 
+## create row numbers and total number of row per study (useful?)
 ext_fin <- ext_fin %>% group_by(study_id, definition_of_outcome) %>% 
   mutate(dp_row = row_number(), 
          n_dp = n()) %>% 
   ungroup() %>% 
-  arrange(study_id, definition_of_outcome)
+  arrange(study_id, definition_of_outcome) %>% 
+  select(-c(age_mean_years, age_group, confounders, mediators, results_description))
 
-ext_fin <- ext_fin %>% group_split(study_id)
-names(test) <- levels(ext_fin$study_id)
+# make study_id a factor var
+ext_fin$study_id <- factor(ext_fin$study_id)
 
-lapply(names(test),function(x) assign(x,test[[x]],.GlobalEnv))
+## split df into a list of separate df's by study
+ext_fin_list <- ext_fin %>% group_split(study_id)
 
-write_xlsx(test, paste0("./data/working/table-2_dedup.xlsx"))
+## set list names as study_id
+names(ext_fin_list) <- levels(ext_fin$study_id)
+
+## this will add each df in list to global environment - not run for now
+#list2env(ext_fin_list, .GlobalEnv)
+
+write_xlsx(ext_fin_list, paste0("./data/working/table-2_dedup.xlsx"))
+
+## load in the manually de-duped data 
+#  note - this was done prior to chnages to preceding code so needs to be joined
+#         onto ext_fin_list and checked
+manual_dup_list <- mysheets <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20200807.xlsx")
+
+manual_dup <- do.call(rbind.data.frame, manual_dup_list)
+
+test <- ext_fin %>% left_join(manual_dup)
 
 
+test_ext <- ext_fin %>% select(c(study_id, first_author,
+                                 year_published, age_cat,
+                                 sex, definition_of_outcome)) %>% mutate(x = "ext")
+test_dup <- manual_dup %>% select(c(study_id, first_author,
+                                    year_published, age_cat,
+                                    sex, definition_of_outcome)) %>% mutate(y = "dup")
+test_join <- test_ext %>% left_join(test_dup)
 
 #######################
 table_2 <- table_2 %>% 
