@@ -63,18 +63,7 @@ ext_check <- extraction %>% select(study_id, id, first_author) %>% unique()
 
 ext_check %>% anti_join(sd_check) %>% anti_join(rob)
 
-
-## not needed
-#study_desc <- study_desc %>% mutate(gen_health = 
-#                                   ifelse(str_detect(outcome_topic_s, "General health"),
-#                                          1,0),
-#                                 mental_health = 
-#                                   ifelse(str_detect(outcome_topic_s, "Mental health"),
-#                                          1,0),
-#                                 phys_health = ifelse(str_detect(outcome_topic_s, "Physical health"),
-#                                                      1,0),
-#                                 health_behav = ifelse(str_detect(outcome_topic_s, "Health behaviours"),
-#                                                       1,0))
+rm(sd_check, rob_check, ext_check)
 
 #------------------------------------------------------------------------------#
 ##### Extracted data - final set for synthesis 
@@ -84,73 +73,39 @@ ext_check %>% anti_join(sd_check) %>% anti_join(rob)
 ##### more specific outcome and exposure --------------------------------------
 ##### code befiore table 1 to dedup and get vector of final record ids
 
-## create flags for each outcome group
-#ext_fin <- extraction %>% mutate(gen_health = 
-#                                       ifelse(str_detect(outcome_topic_s, "General health"),
-#                                              1,0),
-#                                     mental_health = 
-#                                       ifelse(str_detect(outcome_topic_s, "Mental health"),
-#                                              1,0),
-#                                     phys_health = ifelse(str_detect(outcome_topic_s, "Physical health"),
-#                                                          1,0),
-#                                     health_behav = ifelse(str_detect(outcome_topic_s, "Health behaviours"),
-#                                                          1,0))
-
-
-## create flags for each exposure group
-# select relevant variabloes from study description df
+## select relevant variables from study description df
 exp_df <- study_desc %>% 
   select(study_id, id, exposure_topic, study_population, study_design)
-
 # join to extraction df
 ext_fin <- extraction %>% left_join(exp_df, by = c("study_id", "id"))
 
-ext_fin$exposure_topic <- factor(ext_fin$exposure_topic) # change to factor
-
-# flags
-ext_fin <- ext_fin %>% 
-  mutate(emp_contract = ifelse(str_detect(exposure_topic, 
-                                          "Employment contract"),
-                               1,0),
-         emp_spells = ifelse(str_detect(exposure_topic,
-                                        "Employment spells"),
-                             1,0),
-         inc_volatility = ifelse(str_detect(exposure_topic, 
-                                            "Income volatility"),
-                                 1,0),
-         layoff_contact = ifelse(str_detect(exposure_topic,
-                                            "Layoff contact"),
-                                 1,0),
-         multiple_exp = ifelse(str_detect(exposure_topic,
-                                          "Multiple"),
-                               1,0),
-         job_insecurity = ifelse(str_detect(exposure_topic,
-                                            "Perceived job security"),
-                                 1,0),
-         underemployed = ifelse(str_detect(exposure_topic,
-                                           "Underemployment"),
-                                1,0))
-
-
 ## create dp identfier
-ext_fin <- ext_fin %>%mutate(dp_id = paste0("dp",row_number()))
+ext_fin <- ext_fin %>%mutate(dp_id = paste0("dp",row_number())) %>% 
+  select(c(dp_id, study_id, id, first_author, year_published, exposure_topic, outcome_cat, everything(),-mediators,-results_description))
 
-## create row numbers and total number of row per study (useful?)
-#ext_fin <- ext_fin %>% group_by(study_id, definition_of_outcome) %>% 
-#  mutate(dp_row = row_number(), 
-#         n_dp = n()) %>% 
-#  ungroup() %>% 
-#  arrange(study_id, definition_of_outcome) %>% 
-#  select(-c(age_mean_years, age_group, confounders, mediators, results_description))
+## arrange df for checking for dups
+ext_fin2 <- ext_fin %>% 
+  arrange(study_id, exposure_topic, outcome_cat, year_published, first_author) %>% 
+  select(c(dp_id, study_id, id, first_author, year_published, 
+           sample_size, age_cat, sex,
+           exposure_topic, exposure_group, comparator_group,
+           outcome_cat, definition_of_outcome, outcome_type, study_design))
+
+## create row numbers and total number of row per study
+ext_fin2 <- ext_fin2 %>% 
+group_by(study_id, exposure_topic, definition_of_outcome) %>% 
+  mutate(dp_row = row_number(), 
+         n_dp = n()) %>% 
+  ungroup() 
 
 # make study_id a factor var
-ext_fin$study_id <- factor(ext_fin$study_id)
+ext_fin2$study_id <- factor(ext_fin2$study_id)
 
 ## split df into a list of separate df's by study
-ext_fin_list <- ext_fin %>% group_split(study_id)
+ext_fin_list <- ext_fin2 %>% group_split(study_id)
 
 ## set list names as study_id
-names(ext_fin_list) <- levels(ext_fin$study_id)
+names(ext_fin_list) <- levels(ext_fin2$study_id)
 
 ## this will add each df in list to global environment - not run for now
 #list2env(ext_fin_list, .GlobalEnv)
