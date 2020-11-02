@@ -85,27 +85,29 @@ ext_check %>% anti_join(sd_check) %>% anti_join(rob)
 ##### code befiore table 1 to dedup and get vector of final record ids
 
 ## create flags for each outcome group
-ext_fin <- extraction %>% mutate(gen_health = 
-                                       ifelse(str_detect(outcome_topic_s, "General health"),
-                                              1,0),
-                                     mental_health = 
-                                       ifelse(str_detect(outcome_topic_s, "Mental health"),
-                                              1,0),
-                                     phys_health = ifelse(str_detect(outcome_topic_s, "Physical health"),
-                                                          1,0),
-                                     health_behav = ifelse(str_detect(outcome_topic_s, "Health behaviours"),
-                                                          1,0))
+#ext_fin <- extraction %>% mutate(gen_health = 
+#                                       ifelse(str_detect(outcome_topic_s, "General health"),
+#                                              1,0),
+#                                     mental_health = 
+#                                       ifelse(str_detect(outcome_topic_s, "Mental health"),
+#                                              1,0),
+#                                     phys_health = ifelse(str_detect(outcome_topic_s, "Physical health"),
+#                                                          1,0),
+#                                     health_behav = ifelse(str_detect(outcome_topic_s, "Health behaviours"),
+#                                                          1,0))
 
 
 ## create flags for each exposure group
-
+# select relevant variabloes from study description df
 exp_df <- study_desc %>% 
-  select(study_id, id, exposure_topic, study_population, study_design,)
+  select(study_id, id, exposure_topic, study_population, study_design)
 
-ext_fin <- ext_fin %>% left_join(exp_df, by = c("study_id", "id"))
+# join to extraction df
+ext_fin <- extraction %>% left_join(exp_df, by = c("study_id", "id"))
 
-ext_fin$exposure_topic <- factor(ext_fin$exposure_topic)
+ext_fin$exposure_topic <- factor(ext_fin$exposure_topic) # change to factor
 
+# flags
 ext_fin <- ext_fin %>% 
   mutate(emp_contract = ifelse(str_detect(exposure_topic, 
                                           "Employment contract"),
@@ -134,12 +136,12 @@ ext_fin <- ext_fin %>%
 ext_fin <- ext_fin %>%mutate(dp_id = paste0("dp",row_number()))
 
 ## create row numbers and total number of row per study (useful?)
-ext_fin <- ext_fin %>% group_by(study_id, definition_of_outcome) %>% 
-  mutate(dp_row = row_number(), 
-         n_dp = n()) %>% 
-  ungroup() %>% 
-  arrange(study_id, definition_of_outcome) %>% 
-  select(-c(age_mean_years, age_group, confounders, mediators, results_description))
+#ext_fin <- ext_fin %>% group_by(study_id, definition_of_outcome) %>% 
+#  mutate(dp_row = row_number(), 
+#         n_dp = n()) %>% 
+#  ungroup() %>% 
+#  arrange(study_id, definition_of_outcome) %>% 
+#  select(-c(age_mean_years, age_group, confounders, mediators, results_description))
 
 # make study_id a factor var
 ext_fin$study_id <- factor(ext_fin$study_id)
@@ -156,22 +158,14 @@ names(ext_fin_list) <- levels(ext_fin$study_id)
 write_xlsx(ext_fin_list, paste0("./data/working/table-2_dedup.xlsx"))
 
 ## load in the manually de-duped data 
-#  note - this was done prior to chnages to preceding code so needs to be joined
-#         onto ext_fin_list and checked
-manual_dup_list <- mysheets <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20200807.xlsx")
+manual_dup_list <- mysheets <- read_excel_allsheets(filename = "./data/working/table-2_dedup_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.xlsx")
 
-manual_dup <- do.call(rbind.data.frame, manual_dup_list)
+manual_dup <- do.call(rbind.data.frame, manual_dup_list) %>% 
+  select(study_id, first_author, 
+         year_published, age_cat, 
+         sex, exposure_group, comparator_group, 
+         definition_of_outcome, dup_flag)
 
-test <- ext_fin %>% left_join(manual_dup)
-
-
-test_ext <- ext_fin %>% select(c(study_id, first_author,
-                                 year_published, age_cat,
-                                 sex, definition_of_outcome)) %>% mutate(x = "ext")
-test_dup <- manual_dup %>% select(c(study_id, first_author,
-                                    year_published, age_cat,
-                                    sex, definition_of_outcome)) %>% mutate(y = "dup")
-test_join <- test_ext %>% left_join(test_dup)
 
 #######################
 table_2 <- table_2 %>% 
