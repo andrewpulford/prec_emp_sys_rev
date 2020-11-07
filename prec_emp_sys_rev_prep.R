@@ -113,14 +113,16 @@ names(ext_fin_list) <- levels(ext_fin2$study_id)
 write_xlsx(ext_fin_list, paste0("./data/working/table-2_dedup.xlsx"))
 
 ## load in the manually de-duped data 
-manual_dup_list <- mysheets <- read_excel_allsheets(filename = "./data/working/table-2_dedup_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.xlsx")
+manual_dup_list <- mysheets <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20201103.xlsx")
 
-manual_dup <- do.call(rbind.data.frame, manual_dup_list) %>% 
-  select(study_id, first_author, 
-         year_published, age_cat, 
-         sex, exposure_group, comparator_group, 
-         definition_of_outcome, dup_flag)
+manual_dup <- do.call(rbind.data.frame, manual_dup_list) #%>% 
+#  select(study_id, first_author, 
+#         year_published, age_cat, 
+#         sex, exposure_group, comparator_group, 
+#         definition_of_outcome, dup_flag)
 
+## note records with no non-duplicate data points - to be excluded
+manual_dup %>% group_by(id) %>% summarise(total = sum(dup_flag)) %>% filter(total==0)
 
 #######################
 table_2 <- table_2 %>% 
