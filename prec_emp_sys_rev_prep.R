@@ -113,6 +113,11 @@ names(ext_fin_list) <- levels(ext_fin2$study_id)
 write_xlsx(ext_fin_list, paste0("./data/working/table-2_dedup.xlsx"))
 
 ## load in the manually de-duped data 
+########## NOTE - duplicate cases coded manually in Excel: dated 20201103
+## Coding:
+## 0 == duplicate (remove)
+## 1 == keep
+## 2 == duplicate (keep for sensitivity analysis)
 manual_dup_list <- mysheets <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20201103.xlsx")
 
 manual_dup <- do.call(rbind.data.frame, manual_dup_list) #%>% 
@@ -122,7 +127,47 @@ manual_dup <- do.call(rbind.data.frame, manual_dup_list) #%>%
 #         definition_of_outcome, dup_flag)
 
 ## note records with no non-duplicate data points - to be excluded
-manual_dup %>% group_by(id) %>% summarise(total = sum(dup_flag)) %>% filter(total==0)
+manual_dup %>% group_by(study_id,id, first_author) %>% 
+  summarise(total = sum(dup_flag)) %>% filter(total==0) 
+
+## se;ect only vars needed for join back onto extraction df
+manual_dup <- manual_dup %>% 
+  select(c(dp_id, dup_flag))
+
+
+## create final extraction df
+ext_fin3 <- ext_fin %>% left_join(manual_dup) %>% 
+  filter(dup_flag !=0)
+##save??
+
+
+ext_fin3$id <- factor(ext_fin3$id)
+
+## create a vector of the final id numbers to be included in review
+fin_id <- levels(ext_fin3$id)
+
+## create final study_desc and rob df's
+study_desc_fin <- study_desc %>% filter(id %in% fin_id)
+rob_fin <- rob %>% filter(id %in% fin_id)
+
+#------------------------------------------------------------------------------#
+##### Table 1 - all grouped by outcome grouping, and study
+#------------------------------------------------------------------------------#
+
+#### high level overview by study for methods section ----------------
+#### fix this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+table_1 <- sr_log %>% full_join(study_desc_fin, by = "study_id") %>% 
+  full_join(rob, by = c("study_id", "id")) %>% 
+  select(c(study_id, id, data_source_s.x, first_author.x, year_published.x,
+           countries_included_in_study, study_design.x, study_population, 
+           global_rating, exposure_topic, outcome_topic_s)) %>% 
+  rename("study_id" = "study_id") %>% 
+  filter(study_id != "SR030") %>% # remove as not in final set of studies
+  arrange(data_source_s.x)
+
+
+write_xlsx(table_1, path = "output/table_1.xlsx")
+
 
 #######################
 table_2 <- table_2 %>% 
@@ -141,42 +186,12 @@ table_2$comparator_group <- factor(table_2$comparator_group)
 
 
 
-########## NOTE - duplicate cases coded manually in Excel: dated 20200807
-## Coding:
-## 0 == keep
-## 1 == duplicate (remove)
-## 2 == duplicate for sensitivity analysis
-## 3 == keep (sex specific)
 
-## call function with extracted data
-mysheets2 <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20200807.xlsx")
 
-## covert list into dataframes in global environment - don't think needed
-#list2env(mysheets2, .GlobalEnv)
 
-## convert list in single df
-tab2_dedup <- bind_rows(mysheets2)
 
-## add id id - shouldn't have been removed
-table_2 <- table_2 %>% select(c(study_id, id, first_author, year_published))
-tab2_dedup <- tab2_dedup %>% left_join(table_2, by = c("study_id", "first_author", "year_published")) %>% 
-  unique()
 
-## create df for dupliacte data points to be considered for sensitivity analysis/stratified 
-## (dup_flag == 2 or 3)
-tab2_sa <- tab2_dedup %>% filter(dup_flag == 2 | dup_flag == 3)
-### add save command for later use <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-## create main deduped table 2 df
-table_2 <- tab2_dedup %>% filter(dup_flag == 0 | dup_flag == 3) %>% as_tibble()
-
-## check how many studies still included
-levels(factor(tab2_dedup$study_id))
-
-### create vector of ID numbers for final analysis -------------------- 
-final_id <- unique(table_2$study_id) 
-
-##### table 2 not how it used to be!!
 
 
 ##########################
@@ -206,24 +221,6 @@ table_2 <- table_2 %>% select(-c(dp_row, n_dp, dup_flag))
 dp_review <- table_2 %>% 
   left_join(extraction) %>% 
   filter(include == 1)
-
-#------------------------------------------------------------------------------#
-##### Table 1 - all grouped by outcome grouping, and study
-#------------------------------------------------------------------------------#
-
-#### high level overview by study for methods section ----------------
-
-table_1 <- sr_log %>% full_join(study_desc, by = "study_id") %>% 
-  full_join(rob, by = c("study_id", "id")) %>% 
-  select(c(study_id, id, data_source_s.x, first_author.x, year_published.x,
-           countries_included_in_study, study_design.x, study_population, 
-           global_rating, exposure_topic, outcome_topic_s)) %>% 
-  rename("study_id" = "study_id") %>% 
-  filter(study_id != "SR030") %>% # remove as not in final set of studies
-  arrange(data_source_s.x)
-
-
-write_xlsx(table_1, path = "output/table_1.xlsx")
 
 
 
