@@ -155,16 +155,25 @@ rob_fin <- rob %>% filter(id %in% fin_id)
 #------------------------------------------------------------------------------#
 
 #### high level overview by study for methods section ----------------
-#### fix this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-table_1 <- sr_log %>% full_join(study_desc_fin, by = "study_id") %>% 
-  full_join(rob, by = c("study_id", "id")) %>% 
-  select(c(study_id, id, data_source_s.x, first_author.x, year_published.x,
-           countries_included_in_study, study_design.x, study_population, 
-           global_rating, exposure_topic, outcome_topic_s)) %>% 
-  rename("study_id" = "study_id") %>% 
-  filter(study_id != "SR030") %>% # remove as not in final set of studies
-  arrange(data_source_s.x)
 
+## drop data_source from study_desc_fin 
+study_desc_fin <- study_desc_fin %>% select(-data_source_s)
+## create vector of final study id's
+study_id_fin <- unique(study_desc_fin$study_id)
+
+## for rob keep only study id and global rating
+rob_fin_global <- rob_fin %>% 
+  filter(study_id %in% study_id_fin) %>% 
+  select(c(study_id, id, global_rating))
+
+table_1 <- sr_log %>% full_join(study_desc_fin, by = "study_id") %>% 
+  full_join(rob_fin_global, by = c("study_id", "id")) %>% 
+  select(c(study_id, id, data_source_s, first_author, year_published,
+           countries_included_in_study, study_design, study_population, 
+           global_rating, exposure_topic, outcome_topic_s)) %>% 
+  filter(study_id != "SR030") %>% # remove as not in final set of studies
+  arrange(data_source_s)
+#### for some reason SR034 is not pulling through - check codes
 
 write_xlsx(table_1, path = "output/table_1.xlsx")
 
