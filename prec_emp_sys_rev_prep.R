@@ -150,6 +150,10 @@ fin_id <- levels(ext_fin3$id)
 study_desc_fin <- study_desc %>% filter(id %in% fin_id)
 rob_fin <- rob %>% filter(id %in% fin_id)
 
+## remove df's no longer needed
+rm(study_desc, extraction, rob, mysheets, manual_dup_list, manual_dup,
+   exp_df, ext_fin_list, ext_fin, ext_fin2)
+
 #------------------------------------------------------------------------------#
 ##### Table 1 - all grouped by outcome grouping, and study
 #------------------------------------------------------------------------------#
@@ -173,63 +177,25 @@ table_1 <- sr_log %>% full_join(study_desc_fin, by = "study_id") %>%
            global_rating, exposure_topic, outcome_topic_s)) %>% 
   filter(study_id != "SR030") %>% # remove as not in final set of studies
   arrange(data_source_s)
-#### for some reason SR034 is not pulling through - check codes
 
 write_xlsx(table_1, path = "output/table_1.xlsx")
 
+#------------------------------------------------------------------------------#
+##### Table 2 - GRADE and summary of findings
+#------------------------------------------------------------------------------#
+
 
 #######################
-table_2 <- table_2 %>% 
-  #  filter(id %in% final_id) %>% # keep only papers in Table 1
-  select(c(study_id, id, dp_id, first_author, year_published, 
-           gen_health, mental_health, phys_health, health_behav,
-           age_cat, sample_size, sex, study_population, 
-           exposure_group, exposure_topic, 
-           comparator_group, definition_of_outcome, study_design)) %>% 
-  arrange(exposure_topic, first_author, year_published)
 
-table_2$study_id <- factor(table_2$study_id)
-table_2$age_cat <- factor(table_2$age_cat)
-table_2$comparator_group <- factor(table_2$comparator_group)
+#table_2$study_id <- factor(table_2$study_id)
+#table_2$age_cat <- factor(table_2$age_cat)
+#table_2$comparator_group <- factor(table_2$comparator_group)
 
+########################
 
-
-
-
-
-
-
-
-
-
-
-##########################
-table_2_gen <- table_2 %>% 
-  filter(gen_health == 1) %>% 
-  select(-c(4:6, 16:18)) 
-
-table_2_mh <- table_2 %>% 
-  filter(mental_health == 1) %>% 
-  select(-c(4:6, 16:18)) 
-
-table_2_phys <- table_2 %>% 
-  filter(phys_health == 1) %>% 
-  select(-c(4:6, 16:18)) 
-
-write_xlsx(table_2_gen, path = "output/table_2_gen.xlsx")
-write_xlsx(table_2_mh, path = "output/table_2_mh.xlsx")
-write_xlsx(table_2_phys, path = "output/table_2_phys.xlsx")
-
-## create flag for dp's to include
-table_2$include <- 1
-# remove unneccesary vars
-table_2 <- table_2 %>% select(-c(dp_row, n_dp, dup_flag))
-
-## create dataframe of data points for use in main analysis
-## needs a bit of checking re missing values
-dp_review <- table_2 %>% 
-  left_join(extraction) %>% 
-  filter(include == 1)
+#write_xlsx(table_2_gen, path = "output/table_2_gen.xlsx")
+#write_xlsx(table_2_mh, path = "output/table_2_mh.xlsx")
+#write_xlsx(table_2_phys, path = "output/table_2_phys.xlsx")
 
 
 
@@ -237,30 +203,52 @@ dp_review <- table_2 %>%
 ##### Figure 1 - number of data points by exposure topic
 #------------------------------------------------------------------------------#
 
+fig_1_prep <- ext_fin3 %>% 
+  filter(dup_flag==1) %>% # keep only non-dup dp's
+  select(c(study_id, id, dp_id, first_author, year_published, 
+           age_cat, sample_size, sex, study_population, 
+           exposure_group, exposure_topic, comparator_group, 
+           outcome_topic_s, definition_of_outcome, outcome_cat,
+           outcome_type, study_design)) %>% 
+  arrange(exposure_topic, first_author, year_published)
+
+
+fig_1_gen <- fig_1_prep %>% 
+  filter(outcome_topic_s == "General health") 
+
+fig_1_mh <- fig_1_prep %>% 
+  filter(outcome_topic_s == "Mental health") 
+
+fig_1_phys <- fig_1_prep %>% 
+  filter(outcome_topic_s == "Physical health")
+
+fig_1_behav <- fig_1_prep %>% 
+  filter(outcome_topic_s == "Health behaviours")
+
 ##### Mental health --------------
 
 ## create a temporary df with all exposure/outcome combinations
-df_temp <- expand.grid(table_2_mh$exposure_topic, table_2_mh$outcome_cat)
+df_temp <- expand.grid(fig_1_mh$exposure_topic, fig_1_mh$outcome_cat)
 names(df_temp) <- c("exposure_topic", "outcome_cat")
 df_temp$data_points <- 0
   
 
-table_2_mh <- read_xlsx("./output/table_2_mh_20200824.xlsx")
+#table_2_mh <- read_xlsx("./output/table_2_mh_20200824.xlsx")
 
-table_2_mh <- table_2_mh %>% select(-c(sex, definition_of_outcome)) %>% 
+fig_1_mh <- fig_1_mh %>% select(-c(sex, definition_of_outcome)) %>% 
   group_by(exposure_topic, outcome_cat, study_design) %>% 
-  summarise(data_points = sum(data_points)) %>% 
+  summarise(data_points = n()) %>% 
   ungroup() %>% 
   arrange(desc(data_points))
 
-fig1_mh <- table_2_mh %>%
+fig_1_mh <- fig_1_mh %>%
   select(-study_design) %>%
   bind_rows(df_temp) %>% 
   group_by(exposure_topic, outcome_cat) %>% 
   summarise(data_points = sum(data_points)) %>% 
   ungroup()
   
-fig1_mh %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
+fig_1_mh %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
   geom_tile(col="grey") +
   coord_fixed() +
   theme_classic()+
@@ -276,6 +264,10 @@ fig1_mh %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)
         legend.position = "left",
         legend.justification = "top",
         axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))  
+
+
+## repeat or functionalise for other outcome cats
+## start thinking about PICOS combinations for analysis
 
 ################################################################################
 study_desc_dedup <- study_desc %>% 
