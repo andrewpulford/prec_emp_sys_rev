@@ -200,10 +200,10 @@ write_xlsx(table_1, path = "output/table_1.xlsx")
 
 
 #------------------------------------------------------------------------------#
-##### Figure 1 - number of data points by exposure topic
+##### Figure 2 - number of data points by exposure topic/outcome category
 #------------------------------------------------------------------------------#
 
-fig_1_prep <- ext_fin3 %>% 
+fig_2_prep <- ext_fin3 %>% 
   filter(dup_flag==1) %>% # keep only non-dup dp's
   select(c(study_id, id, dp_id, first_author, year_published, 
            age_cat, sample_size, sex, study_population, 
@@ -213,48 +213,48 @@ fig_1_prep <- ext_fin3 %>%
   arrange(exposure_topic, first_author, year_published)
 
 
-fig_1_gen <- fig_1_prep %>% 
+fig_2_gen <- fig_2_prep %>% 
   filter(outcome_topic_s == "General health") 
 
-fig_1_mh <- fig_1_prep %>% 
+fig_2_mh <- fig_2_prep %>% 
   filter(outcome_topic_s == "Mental health") 
 
-fig_1_phys <- fig_1_prep %>% 
+fig_2_phys <- fig_2_prep %>% 
   filter(outcome_topic_s == "Physical health")
 
-fig_1_behav <- fig_1_prep %>% 
+fig_2_behav <- fig_2_prep %>% 
   filter(outcome_topic_s == "Health behaviours")
 
-##### Mental health --------------
+##### Genral health --------------
 
 ## create a temporary df with all exposure/outcome combinations
-df_temp <- expand.grid(fig_1_mh$exposure_topic, fig_1_mh$outcome_cat)
+df_temp <- expand.grid(fig_2_gen$exposure_topic, fig_2_gen$outcome_cat)
 names(df_temp) <- c("exposure_topic", "outcome_cat")
 df_temp$data_points <- 0
-  
 
-#table_2_mh <- read_xlsx("./output/table_2_mh_20200824.xlsx")
-
-fig_1_mh <- fig_1_mh %>% select(-c(sex, definition_of_outcome)) %>% 
+fig_2_gen <- fig_2_gen %>% select(-c(sex, definition_of_outcome)) %>% 
   group_by(exposure_topic, outcome_cat, study_design) %>% 
   summarise(data_points = n()) %>% 
   ungroup() %>% 
   arrange(desc(data_points))
 
-fig_1_mh <- fig_1_mh %>%
+max(fig_2_gen$data_points)
+
+fig_2_gen <- fig_2_gen %>%
   select(-study_design) %>%
   bind_rows(df_temp) %>% 
   group_by(exposure_topic, outcome_cat) %>% 
   summarise(data_points = sum(data_points)) %>% 
   ungroup()
-  
-fig_1_mh %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
+
+fig_2_gen %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
   geom_tile(col="grey") +
+  geom_text(aes(label = data_points)) +
   coord_fixed() +
   theme_classic()+
   scale_fill_gradient(low="white", high="red", name="Number of data points",
-                      labels = c(1, 3, 5, 7, 9),
-                      breaks = c(1, 3, 5, 7, 9)) +
+                      labels = c(0,5,10,15),
+                      breaks = c(0,5,10,15)) +
   labs(x = "Outcome category", y = "Exposure category") +
   theme(axis.line.y=element_blank(),
         axis.line.x=element_blank(),
@@ -266,23 +266,149 @@ fig_1_mh %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points
         axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))  
 
 
-## repeat or functionalise for other outcome cats
+##### Mental health --------------
+
+## create a temporary df with all exposure/outcome combinations
+df_temp <- expand.grid(fig_2_mh$exposure_topic, fig_2_mh$outcome_cat)
+names(df_temp) <- c("exposure_topic", "outcome_cat")
+df_temp$data_points <- 0
+
+
+fig_2_mh <- fig_2_mh %>% select(-c(sex, definition_of_outcome)) %>% 
+  group_by(exposure_topic, outcome_cat, study_design) %>% 
+  summarise(data_points = n()) %>% 
+  ungroup() %>% 
+  arrange(desc(data_points))
+
+max(fig_2_mh$data_points)
+
+fig_2_mh <- fig_2_mh %>%
+  select(-study_design) %>%
+  bind_rows(df_temp) %>% 
+  group_by(exposure_topic, outcome_cat) %>% 
+  summarise(data_points = sum(data_points)) %>% 
+  ungroup()
+  
+fig_2_mh %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
+  geom_tile(col="grey") +
+  geom_text(aes(label = data_points)) +
+  coord_fixed() +
+  theme_classic()+
+  scale_fill_gradient(low="white", high="red", name="Number of data points",
+                      labels = c(0,5,10,15,20,25),
+                      breaks = c(0,5,10,15,20,25)) +
+  labs(x = "Outcome category", y = "Exposure category") +
+  theme(axis.line.y=element_blank(),
+        axis.line.x=element_blank(),
+        plot.subtitle=element_text(size=rel(0.78)), 
+        plot.title.position="plot",
+        axis.text.y=element_text(colour="Black"),
+        legend.position = "left",
+        legend.justification = "top",
+        axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))  
+
+##### Physical health --------------
+
+## create a temporary df with all exposure/outcome combinations
+df_temp <- expand.grid(fig_2_phys$exposure_topic, fig_2_phys$outcome_cat)
+names(df_temp) <- c("exposure_topic", "outcome_cat")
+df_temp$data_points <- 0
+
+
+
+fig_2_phys <- fig_2_phys %>% select(-c(sex, definition_of_outcome)) %>% 
+  group_by(exposure_topic, outcome_cat, study_design) %>% 
+  summarise(data_points = n()) %>% 
+  ungroup() %>% 
+  arrange(desc(data_points))
+
+max(fig_2_phys$data_points)
+
+
+fig_2_phys <- fig_2_phys %>%
+  select(-study_design) %>%
+  bind_rows(df_temp) %>% 
+  group_by(exposure_topic, outcome_cat) %>% 
+  summarise(data_points = sum(data_points)) %>% 
+  ungroup()
+
+fig_2_phys %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
+  geom_tile(col="grey") +
+  geom_text(aes(label = data_points)) +
+  coord_fixed() +
+  theme_classic()+
+  scale_fill_gradient(low="white", high="red", name="Number of data points",
+                      labels = c(0,5,10),
+                      breaks = c(0,5,10)) +
+  labs(x = "Outcome category", y = "Exposure category") +
+  theme(axis.line.y=element_blank(),
+        axis.line.x=element_blank(),
+        plot.subtitle=element_text(size=rel(0.78)), 
+        plot.title.position="plot",
+        axis.text.y=element_text(colour="Black"),
+        legend.position = "left",
+        legend.justification = "top",
+        axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))  
+
+##### Health behaviours --------------
+
+## create a temporary df with all exposure/outcome combinations
+df_temp <- expand.grid(fig_2_behav$exposure_topic, fig_2_behav$outcome_cat)
+names(df_temp) <- c("exposure_topic", "outcome_cat")
+df_temp$data_points <- 0
+
+
+
+fig_2_behav <- fig_2_behav %>% select(-c(sex, definition_of_outcome)) %>% 
+  group_by(exposure_topic, outcome_cat, study_design) %>% 
+  summarise(data_points = n()) %>% 
+  ungroup() %>% 
+  arrange(desc(data_points))
+
+max(fig_2_behav$data_points)
+
+
+fig_2_behav <- fig_2_behav %>%
+  select(-study_design) %>%
+  bind_rows(df_temp) %>% 
+  group_by(exposure_topic, outcome_cat) %>% 
+  summarise(data_points = sum(data_points)) %>% 
+  ungroup()
+
+fig_2_behav %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
+  geom_tile(col="grey") +
+  geom_text(aes(label = data_points)) +
+  coord_fixed() +
+  theme_classic()+
+  scale_fill_gradient(low="white", high="red", name="Number of data points",
+                      labels = c(0,5,10),
+                      breaks = c(0,5,10)) +
+  labs(x = "Outcome category", y = "Exposure category") +
+  theme(axis.line.y=element_blank(),
+        axis.line.x=element_blank(),
+        plot.subtitle=element_text(size=rel(0.78)), 
+        plot.title.position="plot",
+        axis.text.y=element_text(colour="Black"),
+        legend.position = "left",
+        legend.justification = "top",
+        axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))  
+
+#assign(paste0("fig_1_test"), fig_1_mh)
+
 ## start thinking about PICOS combinations for analysis
 
 ################################################################################
-study_desc_dedup <- study_desc %>% 
-  filter(id %in% final_id) %>% # keep only papers in Table 1
-  select(c(id, study_design, exposure_topic)) 
 
-exc_dedup <- extraction %>% 
-  filter(id %in% final_id) # keep only papers in Table 1
-  
-extraction1 <- exc_dedup %>% 
-left_join(study_desc_dedup)
 
-extraction1$exposure_topic <- factor(extraction1$exposure_topic)
 
-extraction1 %>% 
+#------------------------------------------------------------------------------#
+##### Figure 3 - number of data points by exposure and outcome topic
+#------------------------------------------------------------------------------#
+
+### exposure -----------------
+ext_fin3$exposure_topic <- factor(ext_fin3$exposure_topic)
+
+ext_fin3 %>% 
   group_by(exposure_topic) %>% 
   mutate(dp_total = n()) %>% 
   ungroup() %>% 
@@ -294,12 +420,8 @@ extraction1 %>%
   geom_col() + 
   coord_flip()
 
-#------------------------------------------------------------------------------#
-##### Figure 2 - number of data points by outcome topic
-#------------------------------------------------------------------------------#
-
-
-extraction1 %>% group_by(outcome_topic_s, study_design) %>% 
+### outcome ------------------------
+ext_fin3 %>% group_by(outcome_topic_s, study_design) %>% 
   group_by(outcome_topic_s) %>% 
   mutate(dp_total = n()) %>% 
   ungroup() %>% 
@@ -310,6 +432,15 @@ extraction1 %>% group_by(outcome_topic_s, study_design) %>%
   ggplot(aes(x=outcome_topic_s, y=data_points, col = study_design, fill = study_design)) + 
   geom_col() + 
   coord_flip()
+
+#------------------------------------------------------------------------------#
+##### Figure 4 - effect direction plots
+#------------------------------------------------------------------------------#
+
+#### need to check for missing data re significance
+
+
+
 
 
 
