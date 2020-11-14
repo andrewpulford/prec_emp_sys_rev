@@ -118,7 +118,7 @@ write_xlsx(ext_fin_list, paste0("./data/working/table-2_dedup.xlsx"))
 ## 0 == duplicate (remove)
 ## 1 == keep
 ## 2 == duplicate (keep for sensitivity analysis)
-manual_dup_list <- mysheets <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20201103.xlsx")
+manual_dup_list <- mysheets <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20201114.xlsx")
 
 manual_dup <- do.call(rbind.data.frame, manual_dup_list) #%>% 
 #  select(study_id, first_author, 
@@ -132,7 +132,7 @@ manual_dup %>% group_by(study_id,id, first_author) %>%
 
 ## se;ect only vars needed for join back onto extraction df
 manual_dup <- manual_dup %>% 
-  select(c(dp_id, dup_flag))
+  select(c(dp_id, dup_flag, comparator_cat))
 
 
 ## create final extraction df
@@ -140,11 +140,19 @@ ext_fin3 <- ext_fin %>% left_join(manual_dup) %>%
   filter(dup_flag !=0)
 ##save??
 
-
+# convert id var to factor
 ext_fin3$id <- factor(ext_fin3$id)
 
 ## create a vector of the final id numbers to be included in review
 fin_id <- levels(ext_fin3$id)
+
+## create primary synthesis extraction df
+ext_fin3 <- ext_fin %>% left_join(manual_dup) %>% 
+  filter(dup_flag !=0)
+##save??
+
+## create a vector of the  id numbers to be included in primary synthesis
+ext_primary <- ext_fin3 %>% filter(dup_flag==1)
 
 ## create final study_desc and rob df's
 study_desc_fin <- study_desc %>% filter(id %in% fin_id)
@@ -203,7 +211,7 @@ write_xlsx(table_1, path = "output/table_1.xlsx")
 ##### Figure 2 - number of data points by exposure topic/outcome category
 #------------------------------------------------------------------------------#
 
-fig_2_prep <- ext_fin3 %>% 
+fig_2_prep <- ext_primary %>% 
   filter(dup_flag==1) %>% # keep only non-dup dp's
   select(c(study_id, id, dp_id, first_author, year_published, 
            age_cat, sample_size, sex, study_population, 
@@ -406,9 +414,9 @@ fig_2_behav %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_poi
 #------------------------------------------------------------------------------#
 
 ### exposure -----------------
-ext_fin3$exposure_topic <- factor(ext_fin3$exposure_topic)
+ext_primary$exposure_topic <- factor(ext_primary$exposure_topic)
 
-ext_fin3 %>% 
+ext_primary %>% 
   group_by(exposure_topic) %>% 
   mutate(dp_total = n()) %>% 
   ungroup() %>% 
@@ -421,7 +429,7 @@ ext_fin3 %>%
   coord_flip()
 
 ### outcome ------------------------
-ext_fin3 %>% group_by(outcome_topic_s, study_design) %>% 
+ext_primary %>% group_by(outcome_topic_s, study_design) %>% 
   group_by(outcome_topic_s) %>% 
   mutate(dp_total = n()) %>% 
   ungroup() %>% 
@@ -438,10 +446,17 @@ ext_fin3 %>% group_by(outcome_topic_s, study_design) %>%
 #------------------------------------------------------------------------------#
 
 #### need to check for missing data re significance
+#### need to check sample size is correct for meta analysis
 
 
+#------------------------------------------------------------------------------#
+##### Figure 5 - forest plots
+#------------------------------------------------------------------------------#
 
-
+## https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/
+## https://ebmh.bmj.com/content/22/4/153
+## https://www.researchgate.net/profile/Guido_Schwarzer/publication/283579105_Meta-Analysis_with_R/links/5710a4d008ae19b1869392a3.pdf
+## https://cran.rstudio.org/doc/Rnews/Rnews_2007-3.pdf#page=40
 
 
 ################################################################################
@@ -451,56 +466,57 @@ ext_fin3 %>% group_by(outcome_topic_s, study_design) %>%
 #####                              Mental health                           #####
 #------------------------------------------------------------------------------#
 
-MH <- MH %>% as_tibble(MH) %>% clean_names()
-
-MH <- MH %>% arrange(study_id, id, sex)
-
-MH$first_author <- factor(MH$first_author)
-
-nrow(MH)  ## number of data points
-
-## data points per study
-mh_study_id <- MH %>% group_by(study_id) %>% summarise(data_points = n())
-
-## data points per sex group
-mh_sex <- MH %>% group_by(sex) %>% summarise(data_points = n())
-
-## data points per study and sex
-mh_sudyid_sex <- MH %>% group_by(study_id, sex) %>% summarise(data_points = n())
-
-## data points per exposure
-mh_exposure <- MH %>% group_by(exposure_group) %>% summarise(data_points = n())
-
-## data points per outcome metric
-mh_oucomemet <- MH %>% group_by(outcome_measure) %>% summarise(data_points = n())
-
-## data points per putcome definition
-mh_oucomedef <- MH %>% group_by(definition_of_outcome) %>% summarise(data_points = n())
-
-## list 
-mh_list <- list(mh_study_id, mh_sex, mh_sudyid_sex, mh_exposure, mh_oucomemet, mh_oucomedef)
-
-## write list as Excel workbook
-write_xlsx(mh_list,
-           path = "output/mh_summary_tables.xlsx")
-
-######################
-
-MH$estimate <-  as.numeric(MH$estimate)
-
-## plot OR results
-MH %>% filter(outcome_measure == "OR" | outcome_measure == "AOR") %>% 
-  ggplot(aes(x = estimate, y= first_author)) +
-  geom_point() +
-  xlim(0,2) + 
-  geom_vline(aes(xintercept=1)) +
-  facet_wrap(~sex)
-
-
-## plot regression coefficient results
-MH %>% filter(outcome_measure == "Regression coeffiecient") %>% 
-  ggplot(aes(x = estimate, y= first_author)) +  geom_point() +
-  geom_vline(aes(xintercept=1)) +
-  facet_wrap(~sex)
-
-MH %>% group_by(exposure_group) %>%  summarise(data_points = n())
+#MH <- MH %>% as_tibble(MH) %>% clean_names()
+#
+#MH <- MH %>% arrange(study_id, id, sex)
+#
+#MH$first_author <- factor(MH$first_author)
+#
+#nrow(MH)  ## number of data points
+#
+### data points per study
+#mh_study_id <- MH %>% group_by(study_id) %>% summarise(data_points = n())
+#
+### data points per sex group
+#mh_sex <- MH %>% group_by(sex) %>% summarise(data_points = n())
+#
+### data points per study and sex
+#mh_sudyid_sex <- MH %>% group_by(study_id, sex) %>% summarise(data_points = n())
+#
+### data points per exposure
+#mh_exposure <- MH %>% group_by(exposure_group) %>% summarise(data_points = n())
+#
+### data points per outcome metric
+#mh_oucomemet <- MH %>% group_by(outcome_measure) %>% summarise(data_points = n())
+#
+### data points per putcome definition
+#mh_oucomedef <- MH %>% group_by(definition_of_outcome) %>% summarise(data_points = n())
+#
+### list 
+#mh_list <- list(mh_study_id, mh_sex, mh_sudyid_sex, mh_exposure, mh_oucomemet, mh_oucomedef)
+#
+### write list as Excel workbook
+#write_xlsx(mh_list,
+#           path = "output/mh_summary_tables.xlsx")
+#
+#######################
+#
+#MH$estimate <-  as.numeric(MH$estimate)
+#
+### plot OR results
+#MH %>% filter(outcome_measure == "OR" | outcome_measure == "AOR") %>% 
+#  ggplot(aes(x = estimate, y= first_author)) +
+#  geom_point() +
+#  xlim(0,2) + 
+#  geom_vline(aes(xintercept=1)) +
+#  facet_wrap(~sex)
+#
+#
+### plot regression coefficient results
+#MH %>% filter(outcome_measure == "Regression coeffiecient") %>% 
+#  ggplot(aes(x = estimate, y= first_author)) +  geom_point() +
+#  geom_vline(aes(xintercept=1)) +
+#  facet_wrap(~sex)
+#
+#MH %>% group_by(exposure_group) %>%  summarise(data_points = n())
+#
