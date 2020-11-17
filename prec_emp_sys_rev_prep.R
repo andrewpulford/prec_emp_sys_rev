@@ -81,7 +81,7 @@ ext_fin <- extraction %>% left_join(exp_df, by = c("study_id", "id"))
 
 ## create dp identfier
 ext_fin <- ext_fin %>%mutate(dp_id = paste0("dp",row_number())) %>% 
-  select(c(dp_id, study_id, id, first_author, year_published, exposure_topic, outcome_cat, everything(),-mediators,-results_description))
+  select(c(dp_id, study_id, id, first_author, year_published, exposure_topic, outcome_cat, everything(),-mediators))
 
 ## arrange df for checking for dups
 ext_fin2 <- ext_fin %>% 
@@ -255,7 +255,7 @@ fig_2_gen <- fig_2_gen %>%
   summarise(data_points = sum(data_points)) %>% 
   ungroup()
 
-fig_2_gen %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
+fig_2_gen_plot <- fig_2_gen %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
   geom_tile(col="grey") +
   geom_text(aes(label = data_points)) +
   coord_fixed() +
@@ -273,6 +273,9 @@ fig_2_gen %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_point
         legend.justification = "top",
         axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))  
 
+fig_2_gen_plot
+
+#ggsave(fig_2_gen_plot, ".\prec_emp_sys_rev\charts")
 
 ##### Mental health --------------
 
@@ -445,13 +448,37 @@ ext_primary %>% group_by(outcome_topic_s, study_design) %>%
 ##### Figure 4 - effect direction plots
 #------------------------------------------------------------------------------#
 
-#### need to check for missing data re significance
-#### need to check sample size is correct for meta analysis
+#### need to check for missing estimate data 
+ext_fin3 %>% filter(est_valid!=1) # currently 14 dps to be checked
 
+eff_dir_df <- ext_primary %>% 
+  mutate(direction = ifelse(results_description == "-1", "Better",
+                            ifelse(results_description == "0", "Equivalent",
+                                   ifelse(results_description == "1", "Worse", NA)))) %>%
+  filter(!is.na(direction)) %>% 
+  mutate(direction = factor(direction, levels = c("Better", "Equivalent", "Worse"))) %>% 
+  arrange(exposure_topic, direction) %>% 
+  group_by(exposure_topic) %>%
+  mutate(ymax = n(),
+         ypos = 1:ymax) 
+
+
+table(eff_dir_df$direction, eff_dir_df$exposure_topic)
+
+eff_dir_plot <- eff_dir_df %>% 
+  ggplot(aes(x = exposure_topic, y = ypos, colour = direction)) + scale_colour_manual(values=c("darkgreen","gray58", "red4"), drop=F, name="Direction summary") + 
+  geom_point(shape = 16, size = 6) + scale_y_continuous(limits=c(1,80), expand = c(0.05,0.05)) +
+  coord_flip() + labs(x="Exposure combination", y= "Number of data points")  + theme_classic()
+
+eff_dir_plot
 
 #------------------------------------------------------------------------------#
 ##### Figure 5 - forest plots
 #------------------------------------------------------------------------------#
+
+#### need to check for missing data re significance
+#### need to check sample size is correct for meta analysis
+
 
 ## https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/
 ## https://ebmh.bmj.com/content/22/4/153
@@ -459,64 +486,3 @@ ext_primary %>% group_by(outcome_topic_s, study_design) %>%
 ## https://cran.rstudio.org/doc/Rnews/Rnews_2007-3.pdf#page=40
 
 
-################################################################################
-################################################################################
-################################################################################
-#------------------------------------------------------------------------------#
-#####                              Mental health                           #####
-#------------------------------------------------------------------------------#
-
-#MH <- MH %>% as_tibble(MH) %>% clean_names()
-#
-#MH <- MH %>% arrange(study_id, id, sex)
-#
-#MH$first_author <- factor(MH$first_author)
-#
-#nrow(MH)  ## number of data points
-#
-### data points per study
-#mh_study_id <- MH %>% group_by(study_id) %>% summarise(data_points = n())
-#
-### data points per sex group
-#mh_sex <- MH %>% group_by(sex) %>% summarise(data_points = n())
-#
-### data points per study and sex
-#mh_sudyid_sex <- MH %>% group_by(study_id, sex) %>% summarise(data_points = n())
-#
-### data points per exposure
-#mh_exposure <- MH %>% group_by(exposure_group) %>% summarise(data_points = n())
-#
-### data points per outcome metric
-#mh_oucomemet <- MH %>% group_by(outcome_measure) %>% summarise(data_points = n())
-#
-### data points per putcome definition
-#mh_oucomedef <- MH %>% group_by(definition_of_outcome) %>% summarise(data_points = n())
-#
-### list 
-#mh_list <- list(mh_study_id, mh_sex, mh_sudyid_sex, mh_exposure, mh_oucomemet, mh_oucomedef)
-#
-### write list as Excel workbook
-#write_xlsx(mh_list,
-#           path = "output/mh_summary_tables.xlsx")
-#
-#######################
-#
-#MH$estimate <-  as.numeric(MH$estimate)
-#
-### plot OR results
-#MH %>% filter(outcome_measure == "OR" | outcome_measure == "AOR") %>% 
-#  ggplot(aes(x = estimate, y= first_author)) +
-#  geom_point() +
-#  xlim(0,2) + 
-#  geom_vline(aes(xintercept=1)) +
-#  facet_wrap(~sex)
-#
-#
-### plot regression coefficient results
-#MH %>% filter(outcome_measure == "Regression coeffiecient") %>% 
-#  ggplot(aes(x = estimate, y= first_author)) +  geom_point() +
-#  geom_vline(aes(xintercept=1)) +
-#  facet_wrap(~sex)
-#
-#MH %>% group_by(exposure_group) %>%  summarise(data_points = n())
-#
