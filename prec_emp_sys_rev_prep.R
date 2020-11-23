@@ -14,7 +14,11 @@ library(stringr) # for strings
 library(readxl) # for reading excel file and all data sheets
 library(writexl)
 library(janitor) # for sorting out variable names etc
-
+library(meta) # for meta analysis
+library(metafor) # for meta analysis
+# cant's get dmetar to install
+#devtools::install_github("MathiasHarrer/dmetar")
+#library(dmetar)  # for meta analysis
 
 ### open extracted data
 ## this function will read all excel sheets as a list
@@ -406,12 +410,6 @@ fig_2_behav %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_poi
 
 #assign(paste0("fig_1_test"), fig_1_mh)
 
-## start thinking about PICOS combinations for analysis
-
-################################################################################
-
-
-
 #------------------------------------------------------------------------------#
 ##### Figure 3 - number of data points by exposure and outcome topic
 #------------------------------------------------------------------------------#
@@ -468,21 +466,63 @@ table(eff_dir_df$direction, eff_dir_df$exposure_topic)
 eff_dir_plot <- eff_dir_df %>% 
   ggplot(aes(x = exposure_topic, y = ypos, colour = direction)) + scale_colour_manual(values=c("darkgreen","gray58", "red4"), drop=F, name="Direction summary") + 
   geom_point(shape = 16, size = 6) + scale_y_continuous(limits=c(1,80), expand = c(0.05,0.05)) +
-  coord_flip() + labs(x="Exposure combination", y= "Number of data points")  + theme_classic()
+  coord_flip() + labs(x="Exposure category", y= "Number of data points")  + theme_classic()
 
 eff_dir_plot
 
+
 #------------------------------------------------------------------------------#
-##### Figure 5 - forest plots
 #------------------------------------------------------------------------------#
+#####                             Meta analysis                            #####
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+
+## start thinking about PICOS combinations for analysis
 
 #### need to check for missing data re significance
-#### need to check sample size is correct for meta analysis
+##    need point estimate and se; exact sample size not required
+##    will be difficult to include non-sig estimates where exact or approx se not possible
+## for formulae see: 
+## https://handbook-5-1.cochrane.org/chapter_7/7_7_7_2_obtaining_standard_errors_from_confidence_intervals_and.htm
+## https://handbook-5-1.cochrane.org/chapter_7/7_7_7_3_obtaining_standard_errors_from_confidence_intervals_and.htm
 
+
+
+## check how many dp's have a valid std error
+sum(ext_fin3$se_valid)
+
+
+#### need to check sample size is correct for meta analysis
+##    ^^^ see above ^^^
 
 ## https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/
 ## https://ebmh.bmj.com/content/22/4/153
 ## https://www.researchgate.net/profile/Guido_Schwarzer/publication/283579105_Meta-Analysis_with_R/links/5710a4d008ae19b1869392a3.pdf
 ## https://cran.rstudio.org/doc/Rnews/Rnews_2007-3.pdf#page=40
 
+## test df for meta analysis
+ma_test <- ext_primary %>% 
+  filter(outcome_measure=="OR") %>% # filter only ORs
+  # convert variables to numeric t oallow calculations
+  mutate(estimate = as.numeric(estimate),
+         lowci = as.numeric(lowci),
+         upci = as.numeric(upci),
+         se = as.numeric(se)) %>% 
+  # calculate log of estimate and CIs for conversion
+  mutate(ln_est = log(estimate),
+         ln_lowci = log(lowci),
+         ln_upci = log(upci)) %>% 
+  # calculate se based on log of CIs ===> need to check whether needs to then be exponentiated
+  mutate(se = ifelse(se_valid == 0,
+                     (ln_upci-ln_lowci)/3.92, se))
+## next sort out se's where only have p value
+
+
+
+## produce meta analysis data ====> not working properly??? 
+metagen(TE = estimate, seTE = se, sm = "OR", data = ma_test)
+
+#------------------------------------------------------------------------------#
+##### Figure 5 - forest plots
+#------------------------------------------------------------------------------#
 
