@@ -503,7 +503,7 @@ sum(ext_fin3$se_valid)
 ## test df for meta analysis
 ma_test <- ext_primary %>% 
   filter(outcome_measure=="OR") %>% # filter only ORs
-  # convert variables to numeric t oallow calculations
+  # convert variables to numeric to allow calculations
   mutate(estimate = as.numeric(estimate),
          lowci = as.numeric(lowci),
          upci = as.numeric(upci),
@@ -519,10 +519,13 @@ ma_test <- ext_primary %>%
 
 
 
-## produce meta analysis data ====> not working properly??? 
-metagen(TE = estimate, seTE = se, sm = "OR", data = ma_test)
+## produce meta analysis data ====> check se, seems OK but none were precalculated 
+ma_test1 <- ma_test %>% filter(exposure_topic == "Perceived job security")
+ma_test_run <- metagen(TE = ln_est, seTE = se, sm = "OR", 
+                       studlab = paste(first_author), data = ma_test1)
 
 #------------------------------------------------------------------------------#
 ##### Figure 5 - forest plots
 #------------------------------------------------------------------------------#
 
+forest(ma_test_run)
