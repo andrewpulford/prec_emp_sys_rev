@@ -512,20 +512,32 @@ ma_test <- ext_primary %>%
   mutate(ln_est = log(estimate),
          ln_lowci = log(lowci),
          ln_upci = log(upci)) %>% 
+  # convert p values into numeric values by dropping the < bit from strings
+  mutate(p_value = gsub("[^0-9.-]", "", p_value)) %>% 
+  mutate(p_value = as.numeric(p_value)) %>% 
+  # calculate z scores for cases with only valid p value
+  mutate(z_score = ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, qnorm(1-p_value/2), NA)) %>% 
   # calculate se based on log of CIs ===> need to check whether needs to then be exponentiated
-  mutate(se = ifelse(se_valid == 0,
-                     (ln_upci-ln_lowci)/3.92, se))
-## next sort out se's where only have p value
+  # next sort out se's where only have p value
+  mutate(se2 = ifelse(se_valid ==0 & ci_valid == 1, (ln_upci-ln_lowci)/3.92, 
+                     ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, estimate/z_score, se)))
+#
 
 
 
 ## produce meta analysis data ====> check se, seems OK but none were precalculated 
 ma_test1 <- ma_test %>% filter(exposure_topic == "Perceived job security")
-ma_test_run <- metagen(TE = ln_est, seTE = se, sm = "OR", 
+ma_test_run <- metagen(TE = ln_est, seTE = se2, sm = "OR", 
                        studlab = paste(first_author), data = ma_test1)
+
+ma_test2 <- ma_test %>% filter(exposure_topic == "Employment contract" & outcome_cat == "Mental health symptoms")
+ma_test_run2 <- metagen(TE = ln_est, seTE = se2, sm = "OR", 
+                       studlab = paste0(first_author), data = ma_test2)
+ma_test_run2
 
 #------------------------------------------------------------------------------#
 ##### Figure 5 - forest plots
 #------------------------------------------------------------------------------#
 
-forest(ma_test_run)
+forest(ma_test_run, leftcols = "studlab")
+forest(ma_test_run2, leftcols = "studlab")
