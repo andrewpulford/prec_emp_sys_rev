@@ -491,6 +491,9 @@ eff_dir_plot
 ## check how many dp's have a valid std error
 sum(ext_fin3$se_valid)
 
+## check frequency of different outcome measures in primary analysis  
+table(ext_primary$outcome_measure, ext_primary$outcome_type)
+
 
 #### need to check sample size is correct for meta analysis
 ##    ^^^ see above ^^^
@@ -526,11 +529,13 @@ ma_test <- ext_primary %>%
 
 
 ## produce meta analysis data ====> check se, seems OK but none were precalculated 
-ma_test1 <- ma_test %>% filter(exposure_topic == "Perceived job security")
+ma_test1 <- ma_test %>% filter(exposure_topic == "Perceived job security" & 
+                                 outcome_cat == "Mental health symptoms")
 ma_test_run <- metagen(TE = ln_est, seTE = se2, sm = "OR", 
                        studlab = paste(first_author), data = ma_test1)
 
-ma_test2 <- ma_test %>% filter(exposure_topic == "Employment contract" & outcome_cat == "Mental health symptoms")
+ma_test2 <- ma_test %>% filter(exposure_topic == "Employment contract" & 
+                                 outcome_cat == "Mental health symptoms")
 ma_test_run2 <- metagen(TE = ln_est, seTE = se2, sm = "OR", 
                        studlab = paste0(first_author), data = ma_test2)
 ma_test_run2
@@ -541,3 +546,4 @@ ma_test_run2
 
 forest(ma_test_run, leftcols = "studlab")
 forest(ma_test_run2, leftcols = "studlab")
+
