@@ -75,7 +75,7 @@ rm(sd_check, rob_check, ext_check)
 
 #### descriptive information grouped by outcome domain, exposure domain, 
 ##### more specific outcome and exposure --------------------------------------
-##### code befiore table 1 to dedup and get vector of final record ids
+##### code before table 1 to dedup and get vector of final record ids
 
 ## select relevant variables from study description df
 exp_df <- study_desc %>% 
@@ -83,7 +83,7 @@ exp_df <- study_desc %>%
 # join to extraction df
 ext_fin <- extraction %>% left_join(exp_df, by = c("study_id", "id"))
 
-## create dp identfier
+## create dp identifier
 ext_fin <- ext_fin %>%mutate(dp_id = paste0("dp",row_number())) %>% 
   select(c(dp_id, study_id, id, first_author, year_published, exposure_topic, outcome_cat, everything(),-mediators))
 
@@ -477,6 +477,10 @@ eff_dir_plot
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
 
+## https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/
+## https://ebmh.bmj.com/content/22/4/153
+## https://www.researchgate.net/profile/Guido_Schwarzer/publication/283579105_Meta-Analysis_with_R/links/5710a4d008ae19b1869392a3.pdf
+## https://cran.rstudio.org/doc/Rnews/Rnews_2007-3.pdf#page=40
 ## start thinking about PICOS combinations for analysis
 
 #### need to check for missing data re significance
@@ -487,22 +491,63 @@ eff_dir_plot
 ## https://handbook-5-1.cochrane.org/chapter_7/7_7_7_3_obtaining_standard_errors_from_confidence_intervals_and.htm
 
 
+#------------------------------------------------------------------------------#
+#### Grouping PECOS combinations for synthesis
+#------------------------------------------------------------------------------#
 
+## this pipeline groups dp's by PECOS configurations
+## does not currently include population, outcome measure (eg OR, HR etc), or study type
+## calculates the PECOS group number, row number within PECOS group 
+## PECOS groups with 2 or more dp's can be considered for meta analysis (ma variable)
+ext_primary <- ext_primary %>% group_by(exposure_topic, outcome_cat, 
+                                        outcome_type,comparator_cat) %>% 
+  mutate(pecos = cur_group_id(),
+         pecos_row = row_number(),
+         pecos_total = n(),
+         ma = ifelse(pecos_total>=2, 1, 0)) %>% arrange(pecos) %>% 
+  ungroup()
+
+ext_primary_list_bin <- ext_primary %>% 
+  filter(outcome_type == "binary") %>% 
+  group_split(pecos)
+
+ext_primary_list_cont <- ext_primary %>% 
+  filter(outcome_type == "continuous") %>% 
+  group_split(pecos)
+
+## set list names as study_id
+#names(ext_primary_list) <- levels(ext_primary$pecos)
+
+write_xlsx(ext_primary_list_bin, paste0("./data/working/pecos_binary.xlsx"))
+
+write_xlsx(ext_primary_list_cont, paste0("./data/working/pecos_continuous.xlsx"))
+
+
+summary(ext_primary$pecos_total)
+
+##############
 ## check how many dp's have a valid std error
 sum(ext_fin3$se_valid)
 
 ## check frequency of different outcome measures in primary analysis  
 table(ext_primary$outcome_measure, ext_primary$outcome_type)
 
+#------------------------------------------------------------------------------#
+#### Recoding binary outcomes
+#------------------------------------------------------------------------------#
+
+## Odds ratios are the preferred binary outcome measure for synthesis
+## Hazard ratios to be treated as approximate to relative risk
+## Relative risk to be converted based on reconfiguration of formula:
+##    Risk=odds/(1+odds) (Grant 2014 - https://www.bmj.com/content/348/bmj.f7450.full)
+## to:
+##    
 
 #### need to check sample size is correct for meta analysis
 ##    ^^^ see above ^^^
 
-## https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/
-## https://ebmh.bmj.com/content/22/4/153
-## https://www.researchgate.net/profile/Guido_Schwarzer/publication/283579105_Meta-Analysis_with_R/links/5710a4d008ae19b1869392a3.pdf
-## https://cran.rstudio.org/doc/Rnews/Rnews_2007-3.pdf#page=40
 
+######## amend so that other outcome measures also calculated <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ## test df for meta analysis
 ma_test <- ext_primary %>% 
   filter(outcome_measure=="OR") %>% # filter only ORs
