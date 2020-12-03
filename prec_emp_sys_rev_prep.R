@@ -532,6 +532,9 @@ sum(ext_fin3$se_valid)
 ## check frequency of different outcome measures in primary analysis  
 table(ext_primary$outcome_measure, ext_primary$outcome_type)
 
+## check for missing estimates
+ext_primary %>% filter(is.na(estimate))
+
 #------------------------------------------------------------------------------#
 #### Recoding binary outcomes
 #------------------------------------------------------------------------------#
@@ -540,7 +543,7 @@ table(ext_primary$outcome_measure, ext_primary$outcome_type)
 ## Hazard ratios to be treated as approximate to relative risk
 ## Relative risk to be converted based on reconfiguration of formula:
 ##    Risk=odds/(1+odds) (Grant 2014 - https://www.bmj.com/content/348/bmj.f7450.full)
-## to:
+## doesn't covert due to two odds terms - convert OR to RR instead?
 ##    
 
 #### need to check sample size is correct for meta analysis
