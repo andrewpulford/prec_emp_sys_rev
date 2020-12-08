@@ -499,8 +499,8 @@ eff_dir_plot
 ## does not currently include population, outcome measure (eg OR, HR etc), or study type
 ## calculates the PECOS group number, row number within PECOS group 
 ## PECOS groups with 2 or more dp's can be considered for meta analysis (ma variable)
-ext_primary <- ext_primary %>% group_by(exposure_topic, outcome_cat, 
-                                        outcome_type,comparator_cat) %>% 
+ext_primary <- ext_primary %>% group_by(outcome_cat, outcome_measure, # exposure_topic, 
+                                        outcome_type) %>% 
   mutate(pecos = cur_group_id(),
          pecos_row = row_number(),
          pecos_total = n(),
@@ -552,7 +552,9 @@ ext_primary %>% filter(is.na(estimate))
 
 ## create df for meta analyses of binary outcomes
 ma_bin <- ext_primary %>% 
-  filter(outcome_type=="binary" & ma == 1) %>% 
+  filter(outcome_type=="binary" & 
+           ma == 1 & 
+           comparator_cat == "Persistent stable/low exposure") %>% 
 #  filter(outcome_measure=="OR" | outcome_measure == "HR") %>% # filter only ORs and HRs
   # convert variables to numeric to allow calculations
   mutate(estimate = as.numeric(estimate),
@@ -571,25 +573,26 @@ ma_bin <- ext_primary %>%
   # calculate se based on log of CIs ===> need to check whether needs to then be exponentiated
   # next sort out se's where only have p value
   mutate(se2 = ifelse(se_valid ==0 & ci_valid == 1, (ln_upci-ln_lowci)/3.92, 
-                     ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, estimate/z_score, se)))
+                     ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, estimate/z_score, se))) %>% 
+  # create study var for display in forext plots
+  mutate(study = paste0(first_author," (",year_published,"); ",sex,"; ",exposure_group))
 
 
 ## produce meta analysis data ====> check se, seems OK but none were precalculated 
 
-#ma_bin %>% group_by(pecos) %>% metagen(TE = ln_est, seTE = se2, sm = "OR", 
-#                                       studlab = paste(first_author), data = ma_bin)
-
 ma_bin_spine <- ma_bin %>%  select(pecos, outcome_measure) %>% unique()
+bin_spine_length <- nrow(ma_bin_spine)
 ma_bin_pecos <- ma_bin_spine$pecos
 
 ma_bin_list <- vector(mode = "list", length = 0)
 
-for(i in 1:34){
+for(i in 1:bin_spine_length){
   group <- ma_bin_spine[i,1]$pecos
   out_meas <- ma_bin_spine[i,2]$outcome_measure
   ma_bin_temp <- ma_bin %>% filter(pecos == group)
 ma_test_run <- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
-                       studlab = paste(first_author), data = ma_bin_temp)
+                       studlab = paste(study), data = ma_bin_temp,
+                       comb.fixed = FALSE, comb.random = TRUE)
 assign(paste0("ma_bin",group), ma_test_run)
 
 ma_bin_list[[length(ma_bin_list) + 1]] <- ma_test_run
@@ -610,4 +613,4 @@ for (i in seq_along(ma_bin_list)) {
 
 
 
-forest(x = ma_bin4, leftcols = "studlab")
+#forest(x = ma_bin6, leftcols = "studlab")
