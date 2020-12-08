@@ -550,10 +550,10 @@ ext_primary %>% filter(is.na(estimate))
 ##    ^^^ see above ^^^
 
 
-######## amend so that other outcome measures also calculated <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-## test df for meta analysis
-ma_test <- ext_primary %>% 
-  filter(outcome_measure=="OR") %>% # filter only ORs
+## create df for meta analyses of binary outcomes
+ma_bin <- ext_primary %>% 
+  filter(outcome_type=="binary" & ma == 1) %>% 
+#  filter(outcome_measure=="OR" | outcome_measure == "HR") %>% # filter only ORs and HRs
   # convert variables to numeric to allow calculations
   mutate(estimate = as.numeric(estimate),
          lowci = as.numeric(lowci),
@@ -572,26 +572,42 @@ ma_test <- ext_primary %>%
   # next sort out se's where only have p value
   mutate(se2 = ifelse(se_valid ==0 & ci_valid == 1, (ln_upci-ln_lowci)/3.92, 
                      ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, estimate/z_score, se)))
-#
-
 
 
 ## produce meta analysis data ====> check se, seems OK but none were precalculated 
-ma_test1 <- ma_test %>% filter(exposure_topic == "Perceived job security" & 
-                                 outcome_cat == "Mental health symptoms")
-ma_test_run <- metagen(TE = ln_est, seTE = se2, sm = "OR", 
-                       studlab = paste(first_author), data = ma_test1)
 
-ma_test2 <- ma_test %>% filter(exposure_topic == "Employment contract" & 
-                                 outcome_cat == "Mental health symptoms")
-ma_test_run2 <- metagen(TE = ln_est, seTE = se2, sm = "OR", 
-                       studlab = paste0(first_author), data = ma_test2)
-ma_test_run2
+#ma_bin %>% group_by(pecos) %>% metagen(TE = ln_est, seTE = se2, sm = "OR", 
+#                                       studlab = paste(first_author), data = ma_bin)
+
+ma_bin_spine <- ma_bin %>%  select(pecos, outcome_measure) %>% unique()
+ma_bin_pecos <- ma_bin_spine$pecos
+
+ma_bin_list <- vector(mode = "list", length = 0)
+
+for(i in 1:34){
+  group <- ma_bin_spine[i,1]$pecos
+  out_meas <- ma_bin_spine[i,2]$outcome_measure
+  ma_bin_temp <- ma_bin %>% filter(pecos == group)
+ma_test_run <- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
+                       studlab = paste(first_author), data = ma_bin_temp)
+assign(paste0("ma_bin",group), ma_test_run)
+
+ma_bin_list[[length(ma_bin_list) + 1]] <- ma_test_run
+}
+
+
 
 #------------------------------------------------------------------------------#
 ##### Figure 5 - forest plots
 #------------------------------------------------------------------------------#
 
-forest(ma_test_run, leftcols = "studlab")
-forest(ma_test_run2, leftcols = "studlab")
+## loop through all binary MA objects to create forest plots 
+## note - some issues apparent where more than one outcome measure in pecos group (eg OR and HR)
+## need to add code for assigning as an object and/or saving
+for (i in seq_along(ma_bin_list)) {
+  forest(x = ma_bin_list[[i]], leftcols = "studlab")
+}
 
+
+
+forest(x = ma_bin4, leftcols = "studlab")
