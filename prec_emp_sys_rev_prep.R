@@ -58,6 +58,9 @@ rm(MH, `Notes - study description`, `Notes - extraction`, `Notes - risk of bias`
 extraction$id <- as.numeric(extraction$id)
 rob$id <- as.numeric(rob$id)
 
+extraction <- extraction %>% 
+  mutate(exposure_group=str_trim(exposure_group, side ="both"))
+
 ## check study_desc and rob contain same records
 sd_check <- study_desc %>% select(study_id, id, first_author)%>% unique()
 rob_check <- rob %>% select(study_id, id, first_author)%>% unique()
@@ -580,24 +583,25 @@ ma_bin <- ext_primary %>%
 
 ## produce meta analysis data ====> check se, seems OK but none were precalculated 
 
-ma_bin_spine <- ma_bin %>%  select(pecos, outcome_measure) %>% unique()
+ma_bin_spine <- ma_bin %>%  select(pecos, outcome_measure, outcome_cat) %>% unique()
 bin_spine_length <- nrow(ma_bin_spine)
 ma_bin_pecos <- ma_bin_spine$pecos
+ma_bin_labs <- paste(ma_bin_spine$pecos,ma_bin_spine$outcome_cat)
 
 ma_bin_list <- vector(mode = "list", length = 0)
 
 for(i in 1:bin_spine_length){
   group <- ma_bin_spine[i,1]$pecos
   out_meas <- ma_bin_spine[i,2]$outcome_measure
+  out_cat <-  ma_bin_spine[i,3]$outcome_cat
   ma_bin_temp <- ma_bin %>% filter(pecos == group)
 ma_test_run <- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
                        studlab = paste(study), data = ma_bin_temp,
                        comb.fixed = FALSE, comb.random = TRUE)
-assign(paste0("ma_bin",group), ma_test_run)
+assign(paste0("ma_bin",group,"_",out_cat), ma_test_run)
 
 ma_bin_list[[length(ma_bin_list) + 1]] <- ma_test_run
 }
-
 
 
 #------------------------------------------------------------------------------#
@@ -605,10 +609,12 @@ ma_bin_list[[length(ma_bin_list) + 1]] <- ma_test_run
 #------------------------------------------------------------------------------#
 
 ## loop through all binary MA objects to create forest plots 
-## note - some issues apparent where more than one outcome measure in pecos group (eg OR and HR)
 ## need to add code for assigning as an object and/or saving
 for (i in seq_along(ma_bin_list)) {
-  forest(x = ma_bin_list[[i]], leftcols = "studlab")
+  tiff(file = paste0("./charts/forest_plots/",ma_bin_labs[[i]],".tiff"), 
+      width = 960, height = 480)
+  forest_temp <- forest(x = ma_bin_list[[i]], leftcols = "studlab", addrow = TRUE)
+  dev.off()
 }
 
 
