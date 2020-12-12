@@ -611,12 +611,27 @@ ma_bin_list[[length(ma_bin_list) + 1]] <- ma_test_run
 ## loop through all binary MA objects to create forest plots 
 ## need to add code for assigning as an object and/or saving
 for (i in seq_along(ma_bin_list)) {
-  tiff(file = paste0("./charts/forest_plots/",ma_bin_labs[[i]],".tiff"), 
+  tiff(file = paste0("./charts/forest_plots/tiff/",ma_bin_labs[[i]],".tiff"), 
       width = 960, height = 480)
   forest_temp <- forest(x = ma_bin_list[[i]], leftcols = "studlab", addrow = TRUE)
   dev.off()
 }
 
-
+## loop through all binary MA objects to create forest plots 
+## need to add code for assigning as an object and/or saving
+for (i in seq_along(ma_bin_list)) {
+  png(file = paste0("./charts/forest_plots/png/",ma_bin_labs[[i]],".png"), 
+       width = 960, height = 480)
+  forest_temp <- forest(x = ma_bin_list[[i]], leftcols = "studlab", addrow = TRUE)
+  dev.off()
+}
 
 #forest(x = ma_bin6, leftcols = "studlab")
+
+
+## HR df
+hr_df <- ext_primary %>% filter(outcome_measure=="HR")
+
+ma_bin %>% filter(id==2120)
+ma_bin %>% filter(id==3965)
+ma_bin %>% filter(id==3738)
