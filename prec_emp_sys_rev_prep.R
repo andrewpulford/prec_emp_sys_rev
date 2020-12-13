@@ -626,9 +626,39 @@ for (i in seq_along(ma_bin_list)) {
   dev.off()
 }
 
-#forest(x = ma_bin6, leftcols = "studlab")
+
+####  testing ------------------------------------------------------------------
+
+## test code for subgroup analysis by exposure topic -----
+## NOTE - don't do this for draft plots in for loop, keep for final versions
+
+## test df
+ma_bin_test1 <- ma_bin %>% filter(outcome_cat == "Mental health symptoms")
+
+## test MA
+ma_bin_test2 <- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
+        studlab = paste(study), data = ma_bin_test1,
+        comb.fixed = FALSE, comb.random = TRUE)
+
+## update MA with subgroups
+update_ma_test <-update.meta(ma_bin_test2, 
+                             byvar=exposure_topic, 
+                             comb.random = TRUE, 
+                             comb.fixed = FALSE)
+update_ma_test
+
+## forest with subgroups
+forest(x = update_ma_test, leftcols = "studlab", overall = TRUE,
+       subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
 
 
+## for subgroup mixed effects... (not currentlyt working)
+#source("./functions/subgroup_analysis_mixed_effects.R")
+#subgroup.analysis.mixed.effects(x = ma_bin_test2, subgroups = ma_bin$exposure_topic)
+
+## ------
+
+##################
 ## HR df
 hr_df <- ext_primary %>% filter(outcome_measure=="HR")
 
