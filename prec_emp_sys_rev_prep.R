@@ -539,7 +539,7 @@ table(ext_primary$outcome_measure, ext_primary$outcome_type)
 ext_primary %>% filter(is.na(estimate))
 
 #------------------------------------------------------------------------------#
-#### Recoding binary outcomes
+#### Preparing binary outcomes for MA 
 #------------------------------------------------------------------------------#
 
 ## Odds ratios are the preferred binary outcome measure for synthesis
@@ -577,7 +577,7 @@ ma_bin <- ext_primary %>%
   # next sort out se's where only have p value
   mutate(se2 = ifelse(se_valid ==0 & ci_valid == 1, (ln_upci-ln_lowci)/3.92, 
                      ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, estimate/z_score, se))) %>% 
-  # create study var for display in forext plots
+  # create study var for display in forest plots
   mutate(study = paste0(first_author," (",year_published,"); ",sex,"; ",exposure_group))
 
 
@@ -605,7 +605,7 @@ ma_bin_list[[length(ma_bin_list) + 1]] <- ma_test_run
 
 
 #------------------------------------------------------------------------------#
-##### Figure 5 - forest plots
+##### Binary forest plots
 #------------------------------------------------------------------------------#
 
 ## loop through all binary MA objects to create forest plots 
@@ -627,7 +627,7 @@ for (i in seq_along(ma_bin_list)) {
 }
 
 
-####  testing ------------------------------------------------------------------
+####  Binary - testing ---------------------------------------------------------
 
 ## test code for subgroup analysis by exposure topic -----
 ## NOTE - don't do this for draft plots in for loop, keep for final versions
@@ -658,10 +658,76 @@ forest(x = update_ma_test, leftcols = "studlab", overall = TRUE,
 
 ## ------
 
-##################
 ## HR df
 hr_df <- ext_primary %>% filter(outcome_measure=="HR")
 
 ma_bin %>% filter(id==2120)
 ma_bin %>% filter(id==3965)
 ma_bin %>% filter(id==3738)
+
+#------------------------------------------------------------------------------#
+#### Preparing continuous outcomes for MA 
+#------------------------------------------------------------------------------#
+
+## create df for meta analyses of continuous outcomes
+ma_cont <- ext_primary %>% 
+  filter(outcome_type=="continuous" & 
+           ma == 1 & 
+           comparator_cat == "Persistent stable/low exposure") %>% 
+  # convert variables to numeric to allow calculations
+  mutate(estimate = as.numeric(estimate),
+         lowci = as.numeric(lowci),
+         upci = as.numeric(upci),
+         se = as.numeric(se)) %>% 
+  # convert p values into numeric values by dropping the < bit from strings
+  mutate(p_value = gsub("[^0-9.-]", "", p_value)) %>% 
+  mutate(p_value = as.numeric(p_value)) %>% 
+  # calculate z scores for cases with only valid p value
+  mutate(z_score = ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, qnorm(1-p_value/2), NA)) %>% 
+  # next sort out se's where only have p value
+  mutate(se2 = ifelse(se_valid ==0 & ci_valid == 1, (upci-lowci)/3.92, 
+                      ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, estimate/z_score, se))) %>% 
+  # create study var for display in forest plots
+  mutate(study = paste0(first_author," (",year_published,"); ",sex,"; ",exposure_group))
+
+ma_cont_spine <- ma_cont %>%  select(pecos, outcome_measure, outcome_cat) %>% unique()
+cont_spine_length <- nrow(ma_cont_spine)
+ma_cont_pecos <- ma_cont_spine$pecos
+ma_cont_labs <- paste(ma_cont_spine$pecos,ma_cont_spine$outcome_cat)
+
+ma_cont_list <- vector(mode = "list", length = 0)
+
+for(i in 1:cont_spine_length){
+  group <- ma_cont_spine[i,1]$pecos
+  out_meas <- ma_cont_spine[i,2]$outcome_measure
+  out_cat <-  ma_cont_spine[i,3]$outcome_cat
+  ma_cont_temp <- ma_cont %>% filter(pecos == group)
+  ma_test_run <- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
+                         studlab = paste(study), data = ma_cont_temp,
+                         comb.fixed = FALSE, comb.random = TRUE)
+  assign(paste0("ma_cont",group,"_",out_cat), ma_test_run)
+  
+  ma_cont_list[[length(ma_cont_list) + 1]] <- ma_test_run
+}
+
+#------------------------------------------------------------------------------#
+##### Continuous forest plots
+#------------------------------------------------------------------------------#
+
+## loop through all continuous MA objects to create forest plots 
+for (i in seq_along(ma_cont_list)) {
+  tiff(file = paste0("./charts/forest_plots/tiff/continuous/",ma_cont_labs[[i]],".tiff"), 
+       width = 960, height = 480)
+  forest_temp <- forest(x = ma_cont_list[[i]], leftcols = "studlab", addrow = TRUE)
+  dev.off()
+}
+
+## loop through all continuous MA objects to create forest plots 
+## need to add code for assigning as an object and/or saving
+for (i in seq_along(ma_cont_list)) {
+  png(file = paste0("./charts/forest_plots/png/continuous/",ma_cont_labs[[i]],".png"), 
+      width = 960, height = 480)
+  forest_temp <- forest(x = ma_cont_list[[i]], leftcols = "studlab", addrow = TRUE)
+  dev.off()
+}
+
