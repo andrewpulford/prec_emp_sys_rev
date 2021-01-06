@@ -88,11 +88,12 @@ ext_fin <- extraction %>% left_join(exp_df, by = c("study_id", "id"))
 
 ## create dp identifier
 ext_fin <- ext_fin %>%mutate(dp_id = paste0("dp",row_number())) %>% 
-  select(c(dp_id, study_id, id, first_author, year_published, exposure_topic, outcome_cat, everything(),-mediators))
+  select(c(dp_id, study_id, id, first_author, year_published, exposure_topic, 
+           exposure_type, outcome_cat, everything(),-mediators))
 
 ## arrange df for checking for dups
 ext_fin2 <- ext_fin %>% 
-  arrange(study_id, exposure_topic, outcome_cat, year_published, first_author) %>% 
+  arrange(study_id, exposure_topic, exposure_type, outcome_cat, year_published, first_author) %>% 
   select(c(dp_id, study_id, id, first_author, year_published, 
            sample_size, age_cat, sex,
            exposure_topic, exposure_group, comparator_group,
@@ -502,7 +503,7 @@ eff_dir_plot
 ## does not currently include population, outcome measure (eg OR, HR etc), or study type
 ## calculates the PECOS group number, row number within PECOS group 
 ## PECOS groups with 2 or more dp's can be considered for meta analysis (ma variable)
-ext_primary <- ext_primary %>% group_by(outcome_cat, outcome_measure, # exposure_topic, 
+ext_primary <- ext_primary %>% group_by(exposure_type,outcome_cat, outcome_measure,  
                                         outcome_type) %>% 
   mutate(pecos = cur_group_id(),
          pecos_row = row_number(),
@@ -605,13 +606,13 @@ ma_bin_list[[length(ma_bin_list) + 1]] <- ma_test_run
 
 
 #------------------------------------------------------------------------------#
-##### Binary forest plots
+##### Binary forest plots - draft versions
 #------------------------------------------------------------------------------#
 
 ## loop through all binary MA objects to create forest plots 
 ## need to add code for assigning as an object and/or saving
 for (i in seq_along(ma_bin_list)) {
-  tiff(file = paste0("./charts/forest_plots/tiff/",ma_bin_labs[[i]],".tiff"), 
+  tiff(file = paste0("./charts/forest_plots/tiff/binary/",ma_bin_labs[[i]],".tiff"), 
       width = 960, height = 480)
   forest_temp <- forest(x = ma_bin_list[[i]], leftcols = "studlab", addrow = TRUE)
   dev.off()
@@ -620,43 +621,110 @@ for (i in seq_along(ma_bin_list)) {
 ## loop through all binary MA objects to create forest plots 
 ## need to add code for assigning as an object and/or saving
 for (i in seq_along(ma_bin_list)) {
-  png(file = paste0("./charts/forest_plots/png/",ma_bin_labs[[i]],".png"), 
+  png(file = paste0("./charts/forest_plots/png/binary/",ma_bin_labs[[i]],".png"), 
        width = 960, height = 480)
   forest_temp <- forest(x = ma_bin_list[[i]], leftcols = "studlab", addrow = TRUE)
   dev.off()
 }
 
+#------------------------------------------------------------------------------#
+##### Binary forest plots - publication versions
+#------------------------------------------------------------------------------#
+
+## next, create bespoke forest plots for binary pecos...
+## include in paper if MA is based on more than one study
+## supplementary if only one study
+## group by exposure cat within MA
+
+
+#### Meta analyses and forest plots for main paper -----------------------------
+
+### Function for MA/forest plots to be included in paper ----
+forest_paper1 <- function(exposure_lab, outcome_lab, out_meas,
+                         w = 960, h = 480, type){
+  #if(exists("df_temp")) rm("df_temp", envir = globalenv())
+  #if(exists("ma_temp")) rm("ma_temp", envir = globalenv())
+  df_temp <<- ma_bin %>% filter(exposure_type == exposure_lab &
+                               outcome_cat==outcome_lab)
+  ma_temp <<- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
+                     studlab = paste(study), 
+                     data = df_temp,
+                     comb.fixed = FALSE, comb.random = TRUE)
+                     
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+                          comb.fixed = FALSE)
+
+    #produce ans save forest plot
+  png(file = paste0("./charts/forest_plots/paper/",outcome_lab,"_",exposure_lab,".png"),
+      width = w, height = h)
+  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+         subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
+  dev.off()
+  } # end of function ----
+
+### Binary outcomes
+## Alcohol consumption
+forest_paper1(exposure_lab = "binary", outcome_lab = "Alcohol consumption",
+             out_meas = "OR")
+
+## All-cause mortality
+forest_paper1(exposure_lab = "binary", outcome_lab = "All-cause mortality",
+             out_meas = "OR")
+
+## Chronic condition
+forest_paper1(exposure_lab = "binary", outcome_lab = "Chronic condition",
+             out_meas = "OR")
+
+## Mental health symptoms
+forest_paper1(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
+             out_meas = "OR",h = 900)
+
+## Self-assessed health
+forest_paper1(exposure_lab = "binary", outcome_lab = "Self-assessed health",
+             out_meas = "OR")
+
+## Tobacco consumption
+forest_paper1(exposure_lab = "binary", outcome_lab = "Tobacco consumption",
+             out_meas = "OR")
+
+
+
+
+
+#### Meta analyses and forest plots for supplementary material -----------------
+
+forest_supp <- function(exposure_lab, outcome_lab, w = 960, h = 480, type){
+  #if(exists("df_temp")) rm("df_temp", envir = globalenv())
+  #if(exists("ma_temp")) rm("ma_temp", envir = globalenv())
+  df_temp <<- ma_bin %>% filter(exposure_type == exposure_lab &
+                                  outcome_cat==outcome_lab)
+  ma_temp <<- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
+                      studlab = paste(study), 
+                      data = df_temp,
+                      comb.fixed = FALSE, comb.random = TRUE)
+  
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+                          comb.fixed = FALSE)
+  
+  #produce and save forest plot
+  png(file = paste0("./charts/forest_plots/paper/",outcome_lab,"_",exposure_lab,".png"),
+      width = w, height = h)
+  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+         subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
+  dev.off()
+} # end of function ----
+
+
+
+metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
+        studlab = paste(study), 
+        data = df_temp,
+        comb.fixed = FALSE, comb.random = FALSE)
+
 
 ####  Binary - testing ---------------------------------------------------------
 
-## test code for subgroup analysis by exposure topic -----
-## NOTE - don't do this for draft plots in for loop, keep for final versions
-
-## test df
-ma_bin_test1 <- ma_bin %>% filter(outcome_cat == "Mental health symptoms")
-
-## test MA
-ma_bin_test2 <- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
-        studlab = paste(study), data = ma_bin_test1,
-        comb.fixed = FALSE, comb.random = TRUE)
-
-## update MA with subgroups
-update_ma_test <-update.meta(ma_bin_test2, 
-                             byvar=exposure_topic, 
-                             comb.random = TRUE, 
-                             comb.fixed = FALSE)
-update_ma_test
-
-## forest with subgroups
-forest(x = update_ma_test, leftcols = "studlab", overall = TRUE,
-       subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
-
-
-## for subgroup mixed effects... (not currentlyt working)
-#source("./functions/subgroup_analysis_mixed_effects.R")
-#subgroup.analysis.mixed.effects(x = ma_bin_test2, subgroups = ma_bin$exposure_topic)
-
-## ------
+## checking HRs ------
 
 ## HR df
 hr_df <- ext_primary %>% filter(outcome_measure=="HR")
@@ -731,3 +799,46 @@ for (i in seq_along(ma_cont_list)) {
   dev.off()
 }
 
+#### Meta analyses and forest plots for main paper -----------------------------
+
+### Function for MA/forest plots to be included in paper ----
+forest_paper2 <- function(exposure_lab, outcome_lab, out_meas,
+                          w = 960, h = 480, type){
+  #if(exists("df_temp")) rm("df_temp", envir = globalenv())
+  #if(exists("ma_temp")) rm("ma_temp", envir = globalenv())
+  df_temp2 <<- ma_cont %>% filter(exposure_type == exposure_lab &
+                                  outcome_cat==outcome_lab)
+  ma_temp2 <<- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
+                      studlab = paste(study), 
+                      data = df_temp2,
+                      comb.fixed = FALSE, comb.random = TRUE)
+  
+#  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+#                          comb.fixed = FALSE)
+  
+  #produce and save forest plot
+  png(file = paste0("./charts/forest_plots/paper/",outcome_lab,"_",exposure_lab,".png"),
+      width = w, height = h)
+  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+         subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
+  dev.off()
+} # end of function ----
+
+
+### Continuous outcomes
+## Blood pressure - diastolic
+forest_paper2(exposure_lab = "continuous", outcome_lab = "Blood pressure - diastolic",
+             out_meas = "Adjusted mean difference")
+
+## Cardiovascular
+forest_paper2(exposure_lab = "continuous", outcome_lab = "Cholesterol",
+              out_meas = "Adjusted mean difference")
+
+
+## Healthy weight
+forest_paper2(exposure_lab = "continuous", outcome_lab = "Healthy weight",
+              out_meas = "Adjusted mean difference")
+
+## Mental health symptoms
+
+## Self-assessed health
