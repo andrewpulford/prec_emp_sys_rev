@@ -579,7 +579,9 @@ ma_bin <- ext_primary %>%
   mutate(se2 = ifelse(se_valid ==0 & ci_valid == 1, (ln_upci-ln_lowci)/3.92, 
                      ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, estimate/z_score, se))) %>% 
   # create study var for display in forest plots
-  mutate(study = paste0(first_author," (",year_published,"); ",sex,"; ",exposure_group))
+  mutate(study = paste0(first_author," (",year_published,"); ",sex,"; ",exposure_group)) %>% 
+  # remove Cross for time being - don't think estimates are comparable
+  filter(first_author != "Cross, J")
 
 
 ## produce meta analysis data ====> check se, seems OK but none were precalculated 
@@ -655,7 +657,7 @@ forest_paper1 <- function(exposure_lab, outcome_lab, out_meas,
                           comb.fixed = FALSE)
 
     #produce ans save forest plot
-  png(file = paste0("./charts/forest_plots/paper/",outcome_lab,"_",exposure_lab,".png"),
+  png(file = paste0("./charts/forest_plots/paper/binary_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
   forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
@@ -671,9 +673,9 @@ forest_paper1(exposure_lab = "binary", outcome_lab = "Alcohol consumption",
 forest_paper1(exposure_lab = "binary", outcome_lab = "All-cause mortality",
              out_meas = "OR")
 
-## Chronic condition
-forest_paper1(exposure_lab = "binary", outcome_lab = "Chronic condition",
-             out_meas = "OR")
+## Chronic condition (excluded if Cross excluded from MA analysis)
+#forest_paper1(exposure_lab = "binary", outcome_lab = "Chronic condition",
+#             out_meas = "OR")
 
 ## Mental health symptoms
 forest_paper1(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
@@ -756,7 +758,11 @@ ma_cont <- ext_primary %>%
   mutate(se2 = ifelse(se_valid ==0 & ci_valid == 1, (upci-lowci)/3.92, 
                       ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, estimate/z_score, se))) %>% 
   # create study var for display in forest plots
-  mutate(study = paste0(first_author," (",year_published,"); ",sex,"; ",exposure_group))
+  mutate(study = paste0(first_author," (",year_published,"); ",sex,"; ",exposure_group)) %>% 
+  # keep only dp's with valid info for MA
+  filter(!is.na(se2)) %>% 
+  # remove Cross for time being - don't think estimates are comparable
+  filter(first_author != "Cross, J")
 
 ma_cont_spine <- ma_cont %>%  select(pecos, outcome_measure, outcome_cat) %>% unique()
 cont_spine_length <- nrow(ma_cont_spine)
@@ -765,6 +771,13 @@ ma_cont_labs <- paste(ma_cont_spine$pecos,ma_cont_spine$outcome_cat)
 
 ma_cont_list <- vector(mode = "list", length = 0)
 
+
+
+#------------------------------------------------------------------------------#
+##### Draft continuous MAs and forest plots
+#------------------------------------------------------------------------------#
+
+## loop through PECOS's 
 for(i in 1:cont_spine_length){
   group <- ma_cont_spine[i,1]$pecos
   out_meas <- ma_cont_spine[i,2]$outcome_measure
@@ -777,10 +790,6 @@ for(i in 1:cont_spine_length){
   
   ma_cont_list[[length(ma_cont_list) + 1]] <- ma_test_run
 }
-
-#------------------------------------------------------------------------------#
-##### Continuous forest plots
-#------------------------------------------------------------------------------#
 
 ## loop through all continuous MA objects to create forest plots 
 for (i in seq_along(ma_cont_list)) {
@@ -804,8 +813,8 @@ for (i in seq_along(ma_cont_list)) {
 ### Function for MA/forest plots to be included in paper ----
 forest_paper2 <- function(exposure_lab, outcome_lab, out_meas,
                           w = 960, h = 480, type){
-  #if(exists("df_temp")) rm("df_temp", envir = globalenv())
-  #if(exists("ma_temp")) rm("ma_temp", envir = globalenv())
+  if(exists("df_temp2")) rm("df_temp2", envir = globalenv())
+  if(exists("ma_temp2")) rm("ma_temp2", envir = globalenv())
   df_temp2 <<- ma_cont %>% filter(exposure_type == exposure_lab &
                                   outcome_cat==outcome_lab)
   ma_temp2 <<- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
@@ -813,13 +822,13 @@ forest_paper2 <- function(exposure_lab, outcome_lab, out_meas,
                       data = df_temp2,
                       comb.fixed = FALSE, comb.random = TRUE)
   
-#  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
-#                          comb.fixed = FALSE)
+  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, comb.random = TRUE, 
+                          comb.fixed = FALSE)
   
   #produce and save forest plot
-  png(file = paste0("./charts/forest_plots/paper/",outcome_lab,"_",exposure_lab,".png"),
+  png(file = paste0("./charts/forest_plots/paper/continuous_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp2, leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
 } # end of function ----
@@ -827,18 +836,22 @@ forest_paper2 <- function(exposure_lab, outcome_lab, out_meas,
 
 ### Continuous outcomes
 ## Blood pressure - diastolic
-forest_paper2(exposure_lab = "continuous", outcome_lab = "Blood pressure - diastolic",
+forest_paper2(exposure_lab = "binary", outcome_lab = "Blood pressure - diastolic",
              out_meas = "Adjusted mean difference")
 
 ## Cardiovascular
-forest_paper2(exposure_lab = "continuous", outcome_lab = "Cholesterol",
+forest_paper2(exposure_lab = "binary", outcome_lab = "Cholesterol",
               out_meas = "Adjusted mean difference")
 
 
 ## Healthy weight
-forest_paper2(exposure_lab = "continuous", outcome_lab = "Healthy weight",
+forest_paper2(exposure_lab = "binary", outcome_lab = "Healthy weight",
               out_meas = "Adjusted mean difference")
 
-## Mental health symptoms
+## Mental health symptoms ====> probs to check
+forest_paper2(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
+              out_meas = "Regression coefficient", h = 900)
 
-## Self-assessed health
+## Self-assessed health ====> check Cross (2009)
+forest_paper2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
+              out_meas = "Regression coefficient", w = 1000, h = 600)
