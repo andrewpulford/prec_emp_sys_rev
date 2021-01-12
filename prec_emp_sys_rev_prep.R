@@ -581,8 +581,9 @@ ma_bin <- ext_primary %>%
   # create study var for display in forest plots
   mutate(study = paste0(first_author," (",year_published,"); ",sex,"; ",exposure_group)) %>% 
   # remove Cross for time being - don't think estimates are comparable
-  filter(first_author != "Cross, J")
-
+  filter(first_author != "Cross, J") %>% 
+  # add additional info for Dobson (heavy/light smoker)
+  mutate(study = ifelse(first_author=="Dobson, K", paste0(study,"; ",definition_of_outcome), study))
 
 ## produce meta analysis data ====> check se, seems OK but none were precalculated 
 
