@@ -196,6 +196,40 @@ table_1 <- sr_log %>% full_join(study_desc_fin, by = "study_id") %>%
 
 write_xlsx(table_1, path = "output/table_1.xlsx")
 
+#### Study descriptives ----------------
+
+## number of studies
+length(unique(table_1$study_id)) # n = 44
+
+## number of papers
+length(unique(table_1$id)) # n = 50
+
+## number of data points
+nrow(ext_primary) # n = 236
+
+## year of publication range
+table(table_1$year_published)
+
+## number of papers by country
+table(table_1$countries_included_in_study)
+
+## number of studies by country
+country_df <- table_1 %>% select(study_id, countries_included_in_study)
+country_df <- unique(country_df)
+table(country_df$countries_included_in_study)
+
+## number of papers or studies by RoB rating - do papers for now as that was 
+## level RoB undertaken (1=low, 2=med, 3=high)
+table(table_1$global_rating)
+
+## number of papers by exposure topic
+table(table_1$exposure_topic)
+
+## number of papers by outcome topic
+outcome_df <- ext_primary %>% select(id, outcome_topic_s)
+outcome_df <- unique(outcome_df)
+table(outcome_df$outcome_topic_s)
+
 #------------------------------------------------------------------------------#
 ##### Table 2 - GRADE and summary of findings
 #------------------------------------------------------------------------------#
