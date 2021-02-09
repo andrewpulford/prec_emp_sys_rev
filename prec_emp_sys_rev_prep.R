@@ -31,8 +31,8 @@ read_excel_allsheets <- function(filename, tibble = TRUE) {
 }
 
 ## call function with extracted data
-#mysheets <- read_excel_allsheets(filename = "./data/Prec_Emp_Data_Extract_20200729.xlsx") # previous version
-mysheets <- read_excel_allsheets(filename = "./data/Prec_Emp_Data_Extract_20200825.xlsx")
+#mysheets <- read_excel_allsheets(filename = "./data/Prec_Emp_Data_Extract_20200825.xlsx") # previous version
+mysheets <- read_excel_allsheets(filename = "./data/Prec_Emp_Data_Extract_20210131.xlsx")
 
 ## covert list into dataframes in global environment
 list2env(mysheets, .GlobalEnv)
@@ -126,7 +126,10 @@ write_xlsx(ext_fin_list, paste0("./data/working/table-2_dedup.xlsx"))
 ## 0 == duplicate (remove)
 ## 1 == keep
 ## 2 == duplicate (keep for sensitivity analysis)
-manual_dup_list <- mysheets <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20201114.xlsx")
+#manual_dup_list <- mysheets <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20201114.xlsx") # previous
+manual_dup_list <- mysheets <- read_excel_allsheets(filename = "./data/working/table-2_dedup_20210201.xlsx")
+
+
 
 manual_dup <- do.call(rbind.data.frame, manual_dup_list) #%>% 
 #  select(study_id, first_author, 
@@ -157,14 +160,25 @@ fin_id <- levels(ext_fin3$id)
 ## create primary synthesis extraction df
 ext_fin3 <- ext_fin %>% left_join(manual_dup) %>% 
   filter(dup_flag !=0)
-##save??
 
-## create a vector of the  id numbers to be included in primary synthesis
+## remove duplicates
 ext_primary <- ext_fin3 %>% filter(dup_flag==1)
+
+##save primary extraction file
+write.csv(ext_primary, "./data/working/extracted_primary.csv")
+
 
 ## create final study_desc and rob df's
 study_desc_fin <- study_desc %>% filter(id %in% fin_id)
 rob_fin <- rob %>% filter(id %in% fin_id)
+
+## save these too
+write.csv(study_desc_fin, "./data/working/studies_primary.csv")
+write.csv(rob_fin, "./data/working/rob_primary.csv")
+
+### add in additional papers here (Jin-Man and Virtanen) <----------------------
+### check these for duplication <-----------------------------------------------
+
 
 ## remove df's no longer needed
 rm(study_desc, extraction, rob, mysheets, manual_dup_list, manual_dup,
@@ -508,6 +522,112 @@ eff_dir_plot <- eff_dir_df %>%
 
 eff_dir_plot
 
+#------------------------------------------------------------------------------#
+##### Figure 5 - harvest plots
+#------------------------------------------------------------------------------#
+
+# see Cochrane handbook ch12 and Ogilvie et al (2008) 
+# ext_primary df adapted to include harvest_dir var 08/02/2021:
+#     1 = negative outcome
+#     -1 = positive outcome
+
+# open harvest df
+harvest_df <- read.csv("./data/working/extracted_primary_harvest.csv") %>% 
+  #crate labels from harvest direction var
+  mutate(harvest_lab = ifelse(harvest_dir == -1,
+                              "Better",
+                              "Worse")) %>% 
+  left_join(rob_fin_global) %>% # add in risk of bias score
+  # reverse scores to creat height variable
+  mutate(height = ifelse(global_rating == 1, 3,
+                         ifelse(global_rating == 3, 1,
+                                2))) %>% 
+  arrange(desc(height), exposure_topic) %>% 
+  group_by(outcome_topic_s, outcome_cat, harvest_dir) %>% 
+  mutate(position = row_number()) %>% 
+  ungroup()
+
+#### general health ------------------
+harvest_gen <- harvest_df %>%
+  filter(outcome_topic_s=="General health") %>% 
+  ggplot(aes(x=position, y = height, fill = exposure_topic)) +
+  geom_col() + 
+  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  theme_bw() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        strip.placement = "outside")
+harvest_gen
+## add save
+
+#### mental health ---------------
+harvest_mh <- harvest_df %>%
+  filter(!is.na(harvest_dir)) %>%  # temp line
+  filter(outcome_topic_s=="Mental health") %>% 
+  ggplot(aes(x=position, y = height, fill = exposure_topic)) +
+  geom_col() + 
+  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  theme_bw() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        strip.placement = "outside")
+harvest_mh
+## add save
+#### check NAs <=============
+
+#### physical health ------------------
+harvest_phys <- harvest_df %>%
+  filter(outcome_topic_s=="Physical health") %>% 
+  ggplot(aes(x=position, y = height, fill = exposure_topic)) +
+  geom_col() + 
+  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  theme_bw() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        strip.placement = "outside")
+harvest_phys
+## add save
+
+#### health behaviours --------------------------
+harvest_behav <- harvest_df %>%
+  filter(outcome_topic_s=="Health behaviours") %>% 
+  ggplot(aes(x=position, y = height, fill = exposure_topic)) +
+  geom_col() + 
+  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  theme_bw() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        strip.placement = "outside")
+harvest_behav
+## add save
 
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
@@ -607,7 +727,9 @@ ma_bin <- ext_primary %>%
   mutate(p_value = gsub("[^0-9.-]", "", p_value)) %>% 
   mutate(p_value = as.numeric(p_value)) %>% 
   # calculate z scores for cases with only valid p value
-  mutate(z_score = ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, qnorm(1-p_value/2), NA)) %>% 
+  mutate(z_score = ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, qnorm(1-p_value/2), NA))  %>% 
+  # recode z score for Bender 2018 anxiety/depression estimate 
+#  mutate(z_score = ifelse(first_author=="Bender, K", 3.05, z_score)) %>% 
   # calculate se based on log of CIs ===> need to check whether needs to then be exponentiated
   # next sort out se's where only have p value
   mutate(se2 = ifelse(se_valid ==0 & ci_valid == 1, (ln_upci-ln_lowci)/3.92, 
@@ -714,7 +836,7 @@ forest_paper1(exposure_lab = "binary", outcome_lab = "All-cause mortality",
 
 ## Mental health symptoms
 forest_paper1(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
-             out_meas = "OR",h = 900)
+             out_meas = "OR",h = 800)
 
 ## Self-assessed health
 forest_paper1(exposure_lab = "binary", outcome_lab = "Self-assessed health",
@@ -797,8 +919,13 @@ ma_cont <- ext_primary %>%
   # keep only dp's with valid info for MA
   filter(!is.na(se2)) %>% 
   # remove Cross for time being - don't think estimates are comparable
-  filter(first_author != "Cross, J")
-
+  filter(first_author != "Cross, J")  %>% 
+  # remove MH symptoms DPs that don't use CES-D
+  filter(outcome_cat!="Mental health symptoms" |
+           (outcome_cat=="Mental health symptoms" & study=="Burgard, S (2017); Both; persistently insecure at T1 and T2") |
+           (outcome_cat=="Mental health symptoms" & study=="Glavin, P (2015); Both; Persistent insecurity"))
+           
+         
 ma_cont_spine <- ma_cont %>%  select(pecos, outcome_measure, outcome_cat) %>% unique()
 cont_spine_length <- nrow(ma_cont_spine)
 ma_cont_pecos <- ma_cont_spine$pecos
@@ -885,8 +1012,9 @@ forest_paper2(exposure_lab = "binary", outcome_lab = "Healthy weight",
 
 ## Mental health symptoms ====> probs to check
 forest_paper2(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
-              out_meas = "Regression coefficient", h = 900)
+              out_meas = "Regression coefficient")
 
 ## Self-assessed health ====> check Cross (2009)
 forest_paper2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
               out_meas = "Regression coefficient", w = 1000, h = 600)
+
