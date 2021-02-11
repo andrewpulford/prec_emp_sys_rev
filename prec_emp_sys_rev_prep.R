@@ -143,12 +143,16 @@ manual_dup %>% group_by(study_id,id, first_author) %>%
 
 ## se;ect only vars needed for join back onto extraction df
 manual_dup <- manual_dup %>% 
-  select(c(dp_id, dup_flag, comparator_cat))
+  select(c(dp_id, dup_flag, comparator_cat, outcome_cat))
 
 
 ## create final extraction df
-ext_fin3 <- ext_fin %>% left_join(manual_dup) %>% 
-  filter(dup_flag !=0)
+ext_fin3 <- ext_fin %>% 
+  select(-outcome_cat) %>% 
+  left_join(manual_dup) %>% 
+  filter(dup_flag !=0) %>% 
+  # remove Bender dp's for "other health conditions" - not specified in paper
+  filter(outcome_cat != "“Other” Health Conditions")
 ##save??
 
 # convert id var to factor
@@ -157,11 +161,8 @@ ext_fin3$id <- factor(ext_fin3$id)
 ## create a vector of the final id numbers to be included in review
 fin_id <- levels(ext_fin3$id)
 
-## create primary synthesis extraction df
-ext_fin3 <- ext_fin %>% left_join(manual_dup) %>% 
-  filter(dup_flag !=0)
 
-## remove duplicates
+## remove other duplicates (eg sex specific)
 ext_primary <- ext_fin3 %>% filter(dup_flag==1)
 
 ##save primary extraction file
@@ -219,7 +220,7 @@ length(unique(table_1$study_id)) # n = 44
 length(unique(table_1$id)) # n = 50
 
 ## number of data points
-nrow(ext_primary) # n = 236
+nrow(ext_primary) # n = 238
 
 ## year of publication range
 table(table_1$year_published)
@@ -311,7 +312,7 @@ fig_2_gen <- fig_2_gen %>%
   summarise(data_points = sum(data_points)) %>% 
   ungroup()
 
-fig_2_gen_plot <- fig_2_gen %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
+heat_gen <- fig_2_gen %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
   geom_tile(col="grey") +
   geom_text(aes(label = data_points)) +
   coord_fixed() +
@@ -329,9 +330,13 @@ fig_2_gen_plot <- fig_2_gen %>% ggplot(aes(x = outcome_cat , y = exposure_topic,
         legend.justification = "top",
         axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))  
 
-fig_2_gen_plot
+heat_gen
 
-#ggsave(fig_2_gen_plot, ".\prec_emp_sys_rev\charts")
+png("./charts/heat_maps/png/heat_gen.png", 
+    width = 900, height = 541, units = "px")
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(heat_gen)
+dev.off()
 
 ##### Mental health --------------
 
@@ -356,7 +361,7 @@ fig_2_mh <- fig_2_mh %>%
   summarise(data_points = sum(data_points)) %>% 
   ungroup()
   
-fig_2_mh %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
+heat_mh <- fig_2_mh %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
   geom_tile(col="grey") +
   geom_text(aes(label = data_points)) +
   coord_fixed() +
@@ -373,6 +378,14 @@ fig_2_mh %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points
         legend.position = "left",
         legend.justification = "top",
         axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))  
+
+heat_mh
+
+png("./charts/heat_maps/png/heat_mh.png", 
+    width = 900, height = 541, units = "px")
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(heat_mh)
+dev.off()
 
 ##### Physical health --------------
 
@@ -399,7 +412,7 @@ fig_2_phys <- fig_2_phys %>%
   summarise(data_points = sum(data_points)) %>% 
   ungroup()
 
-fig_2_phys %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
+heat_phys <- fig_2_phys %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
   geom_tile(col="grey") +
   geom_text(aes(label = data_points)) +
   coord_fixed() +
@@ -416,6 +429,14 @@ fig_2_phys %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_poin
         legend.position = "left",
         legend.justification = "top",
         axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))  
+
+heat_phys
+
+png("./charts/heat_maps/png/heat_phys.png", 
+    width = 900, height = 541, units = "px")
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(heat_phys)
+dev.off()
 
 ##### Health behaviours --------------
 
@@ -442,7 +463,7 @@ fig_2_behav <- fig_2_behav %>%
   summarise(data_points = sum(data_points)) %>% 
   ungroup()
 
-fig_2_behav %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
+heat_behav <- fig_2_behav %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_points)) +
   geom_tile(col="grey") +
   geom_text(aes(label = data_points)) +
   coord_fixed() +
@@ -460,7 +481,13 @@ fig_2_behav %>% ggplot(aes(x = outcome_cat , y = exposure_topic, fill = data_poi
         legend.justification = "top",
         axis.text.x=element_text(colour="Black", angle = 45, hjust = 1))  
 
-#assign(paste0("fig_1_test"), fig_1_mh)
+heat_behav
+
+png("./charts/heat_maps/png/heat_behav.png", 
+    width = 900, height = 541, units = "px")
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(heat_behav)
+dev.off()
 
 #------------------------------------------------------------------------------#
 ##### Figure 3 - number of data points by exposure and outcome topic
@@ -555,7 +582,8 @@ harvest_gen <- harvest_df %>%
   geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
   facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
   theme_bw() +
-  theme(axis.title.x=element_blank(),
+  theme(text = element_text(size=20),
+        axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
         axis.title.y=element_blank(),
@@ -565,7 +593,12 @@ harvest_gen <- harvest_df %>%
         legend.position = "bottom",
         strip.placement = "outside")
 harvest_gen
-## add save
+
+png("./charts/harvest_plots/png/harvest_gen.png", 
+    width = 960, height = 960)
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(harvest_gen)
+dev.off()
 
 #### mental health ---------------
 harvest_mh <- harvest_df %>%
@@ -576,7 +609,8 @@ harvest_mh <- harvest_df %>%
   geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
   facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
   theme_bw() +
-  theme(axis.title.x=element_blank(),
+  theme(text = element_text(size=20),
+        axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
         axis.title.y=element_blank(),
@@ -586,10 +620,29 @@ harvest_mh <- harvest_df %>%
         legend.position = "bottom",
         strip.placement = "outside")
 harvest_mh
-## add save
+
+png("./charts/harvest_plots/png/harvest_mh.png", 
+    width = 960, height = 960)
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(harvest_mh)
+dev.off()
+
 #### check NAs <=============
 
 #### physical health ------------------
+## might need to split - lots of rows
+
+## number of dps by outcome category
+harvest_df %>%
+  filter(outcome_topic_s=="Physical health") %>% 
+  group_by(outcome_cat) %>% 
+  summarise(n = n()) %>% 
+  print(n=21) %>% 
+  ungroup()
+# consider moving alcohol and smoking to health behaviours
+# possible to group CVD ones?
+
+# plot
 harvest_phys <- harvest_df %>%
   filter(outcome_topic_s=="Physical health") %>% 
   ggplot(aes(x=position, y = height, fill = exposure_topic)) +
@@ -597,7 +650,8 @@ harvest_phys <- harvest_df %>%
   geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
   facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
   theme_bw() +
-  theme(axis.title.x=element_blank(),
+  theme(text = element_text(size=20),
+        axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
         axis.title.y=element_blank(),
@@ -607,9 +661,17 @@ harvest_phys <- harvest_df %>%
         legend.position = "bottom",
         strip.placement = "outside")
 harvest_phys
-## add save
+
+## save
+png("./charts/harvest_plots/png/harvest_phys.png", 
+    width = 960, height = 960)
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(harvest_phys)
+dev.off()
 
 #### health behaviours --------------------------
+
+
 harvest_behav <- harvest_df %>%
   filter(outcome_topic_s=="Health behaviours") %>% 
   ggplot(aes(x=position, y = height, fill = exposure_topic)) +
@@ -617,7 +679,8 @@ harvest_behav <- harvest_df %>%
   geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
   facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
   theme_bw() +
-  theme(axis.title.x=element_blank(),
+  theme(text = element_text(size=20),
+        axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
         axis.title.y=element_blank(),
@@ -627,7 +690,12 @@ harvest_behav <- harvest_df %>%
         legend.position = "bottom",
         strip.placement = "outside")
 harvest_behav
-## add save
+## save
+png("./charts/harvest_plots/png/harvest_behav.png", 
+    width = 960, height = 960)
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(harvest_behav)
+dev.off()
 
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
