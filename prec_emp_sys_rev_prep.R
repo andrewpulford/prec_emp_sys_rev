@@ -575,12 +575,23 @@ harvest_df <- read.csv("./data/working/extracted_primary_harvest.csv") %>%
   ungroup()
 
 #### general health ------------------
+## number of dps by outcome category and effect direction
+harvest_df %>%
+  filter(outcome_topic_s=="General health") %>% 
+  group_by(outcome_cat, harvest_lab) %>% 
+  summarise(n = n()) %>% 
+  print() %>% 
+  ungroup()
+
+# plot
 harvest_gen <- harvest_df %>%
   filter(outcome_topic_s=="General health") %>% 
   ggplot(aes(x=position, y = height, fill = exposure_topic)) +
-  geom_col() + 
-  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  geom_col(width = 0.5) + 
+#  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  xlim(0,56) +
   facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  scale_fill_discrete(name  ="Exposure topic:") +
   theme_bw() +
   theme(text = element_text(size=20),
         axis.title.x=element_blank(),
@@ -591,23 +602,35 @@ harvest_gen <- harvest_df %>%
         axis.ticks.y=element_blank(),
         panel.grid = element_blank(),
         legend.position = "bottom",
-        strip.placement = "outside")
+        strip.placement = "outside",
+        strip.text.y = element_text(size = 12))
 harvest_gen
 
 png("./charts/harvest_plots/png/harvest_gen.png", 
-    width = 960, height = 960)
+    width = 960, height = 800)
 par(mar=c(5,3,2,2)+0.1) # removes margins
 print(harvest_gen)
 dev.off()
 
 #### mental health ---------------
+## number of dps by outcome category and effect direction
+harvest_df %>%
+  filter(outcome_topic_s=="Mental health") %>% 
+  group_by(outcome_cat, harvest_lab) %>% 
+  summarise(n = n()) %>% 
+  print() %>% 
+  ungroup()
+
+# plot
 harvest_mh <- harvest_df %>%
   filter(!is.na(harvest_dir)) %>%  # temp line
   filter(outcome_topic_s=="Mental health") %>% 
   ggplot(aes(x=position, y = height, fill = exposure_topic)) +
-  geom_col() + 
-  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  geom_col(width = 0.5) + 
+#  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  xlim(0,56) +
   facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  scale_fill_discrete(name  ="Exposure topic:") +
   theme_bw() +
   theme(text = element_text(size=20),
         axis.title.x=element_blank(),
@@ -618,37 +641,39 @@ harvest_mh <- harvest_df %>%
         axis.ticks.y=element_blank(),
         panel.grid = element_blank(),
         legend.position = "bottom",
-        strip.placement = "outside")
+        strip.placement = "outside",
+        strip.text.y = element_text(size = 12))
 harvest_mh
 
 png("./charts/harvest_plots/png/harvest_mh.png", 
-    width = 960, height = 960)
+    width = 960, height = 320)
 par(mar=c(5,3,2,2)+0.1) # removes margins
 print(harvest_mh)
 dev.off()
 
-#### check NAs <=============
 
 #### physical health ------------------
 ## might need to split - lots of rows
 
-## number of dps by outcome category
+## number of dps by outcome category and effect direction
 harvest_df %>%
   filter(outcome_topic_s=="Physical health") %>% 
-  group_by(outcome_cat) %>% 
+  group_by(outcome_cat, harvest_lab) %>% 
   summarise(n = n()) %>% 
-  print(n=21) %>% 
+  print() %>% 
   ungroup()
-# consider moving alcohol and smoking to health behaviours
-# possible to group CVD ones?
 
-# plot
-harvest_phys <- harvest_df %>%
-  filter(outcome_topic_s=="Physical health") %>% 
+# plot 1
+harvest_phys1 <- harvest_df %>%
+  filter(outcome_topic_s=="Physical health",
+         outcome_cat %in% c("Cancer", "Cardiovascular","Chronic condition", 
+                            "Digestive", "Respiratory", "Skin/allergy")) %>% 
   ggplot(aes(x=position, y = height, fill = exposure_topic)) +
-  geom_col() + 
-  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  geom_col(width = 0.5) + 
+#  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  xlim(0,56) +
   facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  scale_fill_discrete(name  ="Exposure topic:") +
   theme_bw() +
   theme(text = element_text(size=20),
         axis.title.x=element_blank(),
@@ -659,25 +684,67 @@ harvest_phys <- harvest_df %>%
         axis.ticks.y=element_blank(),
         panel.grid = element_blank(),
         legend.position = "bottom",
-        strip.placement = "outside")
-harvest_phys
+        strip.placement = "outside",
+        strip.text.y = element_text(size = 12))
+harvest_phys1
 
 ## save
-png("./charts/harvest_plots/png/harvest_phys.png", 
+png("./charts/harvest_plots/png/harvest_phys1.png", 
     width = 960, height = 960)
 par(mar=c(5,3,2,2)+0.1) # removes margins
-print(harvest_phys)
+print(harvest_phys1)
+dev.off()
+
+# plot 2
+harvest_phys2 <- harvest_df %>%
+  filter(outcome_topic_s=="Physical health",
+         outcome_cat %in% c("Blood pressure", "Dental", "External causes mortality", 
+                            "Health problems", "Injury", "Migraine")) %>% 
+  ggplot(aes(x=position, y = height, fill = exposure_topic)) +
+  geom_col(width = 0.5) + 
+  #  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  xlim(0,56) +
+  facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  scale_fill_discrete(name  ="Exposure topic:") +
+  theme_bw() +
+  theme(text = element_text(size=20),
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        strip.placement = "outside",
+        strip.text.y = element_text(size = 12))
+harvest_phys2
+
+## save
+png("./charts/harvest_plots/png/harvest_phys2.png", 
+    width = 960, height = 960)
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(harvest_phys2)
 dev.off()
 
 #### health behaviours --------------------------
+## number of dps by outcome category and effect direction
+harvest_df %>%
+  filter(outcome_topic_s=="Health behaviours") %>% 
+  group_by(outcome_cat, harvest_lab) %>% 
+  summarise(n = n()) %>% 
+  print() %>% 
+  ungroup()
 
-
+# plot
 harvest_behav <- harvest_df %>%
   filter(outcome_topic_s=="Health behaviours") %>% 
   ggplot(aes(x=position, y = height, fill = exposure_topic)) +
-  geom_col() + 
-  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  geom_col(width = 0.5) + 
+#  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  xlim(0,56) +
   facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  scale_fill_discrete(name  ="Exposure topic:") +
   theme_bw() +
   theme(text = element_text(size=20),
         axis.title.x=element_blank(),
@@ -688,7 +755,8 @@ harvest_behav <- harvest_df %>%
         axis.ticks.y=element_blank(),
         panel.grid = element_blank(),
         legend.position = "bottom",
-        strip.placement = "outside")
+        strip.placement = "outside",
+        strip.text.y = element_text(size = 12))
 harvest_behav
 ## save
 png("./charts/harvest_plots/png/harvest_behav.png", 
