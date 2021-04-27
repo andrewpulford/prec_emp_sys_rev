@@ -620,11 +620,13 @@ harvest_gen <- harvest_df %>%
         panel.grid = element_blank(),
         legend.position = "bottom",
         strip.placement = "outside",
-        strip.text.y = element_text(size = 12))
+        strip.text.y = element_text(size = 12),
+        strip.text.y.left = element_text(angle = 0)) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
 harvest_gen
 
 png("./charts/harvest_plots/png/harvest_gen.png", 
-    width = 960, height = 800)
+    width = 960, height = 400)
 par(mar=c(5,3,2,2)+0.1) # removes margins
 print(harvest_gen)
 dev.off()
@@ -659,11 +661,13 @@ harvest_mh <- harvest_df %>%
         panel.grid = element_blank(),
         legend.position = "bottom",
         strip.placement = "outside",
-        strip.text.y = element_text(size = 12))
+        strip.text.y = element_text(size = 12),
+        strip.text.y.left = element_text(angle = 0)) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
 harvest_mh
 
 png("./charts/harvest_plots/png/harvest_mh.png", 
-    width = 960, height = 400)
+    width = 960, height = 200)
 par(mar=c(5,3,2,2)+0.1) # removes margins
 print(harvest_mh)
 dev.off()
@@ -679,6 +683,40 @@ harvest_df %>%
   summarise(n = n()) %>% 
   print() %>% 
   ungroup()
+
+harvest_phys <- harvest_df %>%
+  filter(outcome_topic_s=="Physical health") %>% 
+  ggplot(aes(x=position, y = height, fill = exposure_topic)) +
+  geom_col(width = 0.5) + 
+  #  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  xlim(0,56) +
+  facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  scale_fill_discrete(name  ="Exposure topic:") +
+  theme_bw() +
+  theme(text = element_text(size=20),
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        strip.placement = "outside",
+        strip.text.y = element_text(size = 12),
+        strip.text.y.left = element_text(angle = 0)) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
+harvest_phys
+
+## save
+png("./charts/harvest_plots/png/harvest_phys.png", 
+    width = 960, height = 960)
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(harvest_phys)
+dev.off()
+
+
+### if splitting
 
 # plot 1
 harvest_phys1 <- harvest_df %>%
@@ -702,12 +740,14 @@ harvest_phys1 <- harvest_df %>%
         panel.grid = element_blank(),
         legend.position = "bottom",
         strip.placement = "outside",
-        strip.text.y = element_text(size = 12))
+        strip.text.y = element_text(size = 12),
+        strip.text.y.left = element_text(angle = 0)) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
 harvest_phys1
 
 ## save
 png("./charts/harvest_plots/png/harvest_phys1.png", 
-    width = 960, height = 960)
+    width = 960, height = 480)
 par(mar=c(5,3,2,2)+0.1) # removes margins
 print(harvest_phys1)
 dev.off()
@@ -734,12 +774,14 @@ harvest_phys2 <- harvest_df %>%
         panel.grid = element_blank(),
         legend.position = "bottom",
         strip.placement = "outside",
-        strip.text.y = element_text(size = 12))
+        strip.text.y = element_text(size = 12),
+        strip.text.y.left = element_text(angle = 0)) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
 harvest_phys2
 
 ## save
 png("./charts/harvest_plots/png/harvest_phys2.png", 
-    width = 960, height = 960)
+    width = 960, height = 480)
 par(mar=c(5,3,2,2)+0.1) # removes margins
 print(harvest_phys2)
 dev.off()
@@ -773,11 +815,13 @@ harvest_behav <- harvest_df %>%
         panel.grid = element_blank(),
         legend.position = "bottom",
         strip.placement = "outside",
-        strip.text.y = element_text(size = 12))
+        strip.text.y = element_text(size = 12),
+        strip.text.y.left = element_text(angle = 0)) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
 harvest_behav
 ## save
 png("./charts/harvest_plots/png/harvest_behav.png", 
-    width = 960, height = 960)
+    width = 960, height = 480)
 par(mar=c(5,3,2,2)+0.1) # removes margins
 print(harvest_behav)
 dev.off()
@@ -1254,15 +1298,6 @@ males <- ext_fin3 %>% filter(sex=="Male") %>%
          ma = ifelse(pecos_total>=2, 1, 0)) %>% arrange(pecos) %>% 
   ungroup()
 
-#ext_primary_list_bin <- ext_primary %>% 
-#  filter(outcome_type == "binary") %>% 
-#  group_split(pecos)
-#
-#ext_primary_list_cont <- ext_primary %>% 
-#  filter(outcome_type == "continuous") %>% 
-#  group_split(pecos)
-
-###
 
 males_bin <- males %>% 
   filter(outcome_type=="binary" & 
@@ -1312,14 +1347,14 @@ forest_paper_sub1 <- function(exposure_lab, outcome_lab, out_meas,
                           comb.fixed = FALSE)
   
   #produce ans save forest plot
-  png(file = paste0("./charts/forest_plots/supplementary/binary_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
+  png(file = paste0("./charts/forest_plots/supplementary/binary_outcomes/males_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
   forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
   # produce and save funnel plot
-  png(file = paste0("./charts/funnel_plots/supplementary/binary_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
+  png(file = paste0("./charts/funnel_plots/supplementary/binary_outcomes/males_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
   funnel(ma_temp)
   dev.off()
@@ -1351,3 +1386,106 @@ forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Self-assessed health",
 ## Tobacco consumption
 forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Tobacco consumption",
               out_meas = "OR")
+
+#------------------------------------------------------------------------------#
+#### Females 
+#------------------------------------------------------------------------------#
+
+females <- ext_fin3 %>% filter(sex=="Female") %>% 
+  group_by(exposure_type,outcome_cat, outcome_measure,  
+           outcome_type) %>% 
+  mutate(pecos = cur_group_id(),
+         pecos_row = row_number(),
+         pecos_total = n(),
+         ma = ifelse(pecos_total>=2, 1, 0)) %>% arrange(pecos) %>% 
+  ungroup()
+
+
+females_bin <- females %>% 
+  filter(outcome_type=="binary" & 
+           ma == 1 &
+           comparator_cat == "Persistent stable/low exposure") %>% 
+  #  filter(outcome_measure=="OR" | outcome_measure == "HR") %>% # filter only ORs and HRs
+  # convert variables to numeric to allow calculations
+  mutate(estimate = as.numeric(estimate),
+         lowci = as.numeric(lowci),
+         upci = as.numeric(upci),
+         se = as.numeric(se)) %>% 
+  # calculate log of estimate and CIs for conversion
+  mutate(ln_est = log(estimate),
+         ln_lowci = log(lowci),
+         ln_upci = log(upci)) %>% 
+  # convert p values into numeric values by dropping the < bit from strings
+  mutate(p_value = gsub("[^0-9.-]", "", p_value)) %>% 
+  mutate(p_value = as.numeric(p_value)) %>% 
+  # calculate z scores for cases with only valid p value
+  mutate(z_score = ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, qnorm(1-p_value/2), NA))  %>% 
+  # recode z score for Bender 2018 anxiety/depression estimate 
+  #  mutate(z_score = ifelse(first_author=="Bender, K", 3.05, z_score)) %>% 
+  # calculate se based on log of CIs ===> need to check whether needs to then be exponentiated
+  # next sort out se's where only have p value
+  mutate(se2 = ifelse(se_valid ==0 & ci_valid == 1, (ln_upci-ln_lowci)/3.92, 
+                      ifelse(se_valid==0 & ci_valid == 0 & p_valid == 1, estimate/z_score, se))) %>% 
+  # create study var for display in forest plots
+  mutate(study = paste0(first_author," (",year_published,"); ",sex,"; ",exposure_group)) %>% 
+  # remove Cross for time being - don't think estimates are comparable
+  filter(first_author != "Cross, J") %>% 
+  # add additional info for Dobson (heavy/light smoker)
+  mutate(study = ifelse(first_author=="Dobson, K", paste0(study,"; ",definition_of_outcome), study))
+
+### Function for MA/forest plots to be included in sub-group analysis ----
+forest_paper_sub1 <- function(exposure_lab, outcome_lab, out_meas,
+                              w = 960, h = 480, type){
+  #if(exists("df_temp")) rm("df_temp", envir = globalenv())
+  #if(exists("ma_temp")) rm("ma_temp", envir = globalenv())
+  df_temp <<- females_bin %>% filter(exposure_type == exposure_lab &
+                                     outcome_cat==outcome_lab)
+  ma_temp <<- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
+                      studlab = paste(study), 
+                      data = df_temp,
+                      comb.fixed = FALSE, comb.random = TRUE)
+  
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+                          comb.fixed = FALSE)
+  
+  #produce ans save forest plot
+  png(file = paste0("./charts/forest_plots/supplementary/binary_outcomes/females_",outcome_lab,"_",exposure_lab,"_exp.png"),
+      width = w, height = h)
+  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+         subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
+  dev.off()
+  
+  # produce and save funnel plot
+  png(file = paste0("./charts/funnel_plots/supplementary/binary_outcomes/females_",outcome_lab,"_",exposure_lab,"_exp.png"),
+      width = w, height = h)
+  funnel(ma_temp)
+  dev.off()
+  
+  
+} # end of function ----
+
+### Binary outcomes
+## Alcohol consumption
+forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Alcohol consumption",
+                  out_meas = "OR")
+
+## All-cause mortality
+forest_paper_sub1(exposure_lab = "binary", outcome_lab = "All-cause mortality",
+                  out_meas = "OR")
+
+## Chronic condition (excluded if Cross excluded from MA analysis)
+#forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Chronic condition",
+#             out_meas = "OR")
+
+## Mental health symptoms
+forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
+                  out_meas = "OR",h = 800)
+
+## Self-assessed health
+forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Self-assessed health",
+                  out_meas = "OR")
+
+## Tobacco consumption
+forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Tobacco consumption",
+                  out_meas = "OR")
+
