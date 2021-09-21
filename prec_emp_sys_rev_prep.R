@@ -192,8 +192,8 @@ rob_fin <- rob %>% filter(id %in% fin_id)
 write.csv(study_desc_fin, "./data/working/studies_primary.csv")
 write.csv(rob_fin, "./data/working/rob_primary.csv")
 
-### add in additional papers here (Jin-Man and Virtanen) <----------------------
-### check these for duplication <-----------------------------------------------
+### added in additional papers here (Jin-Man and Virtanen) <----------------------
+### checked these for duplication <-----------------------------------------------
 
 
 ## remove df's no longer needed
@@ -870,7 +870,7 @@ for(i in 1:25){
   sign_df[i,8] <- as.numeric(binom_temp[5,])
   
   
-}
+} # end of function
 
 
 
@@ -1040,8 +1040,10 @@ for (i in seq_along(ma_bin_list)) {
 }
 
 #------------------------------------------------------------------------------#
-##### Binary forest plots - publication versions
+##### Binary forest plots - publication versions  
 #------------------------------------------------------------------------------#
+
+#### NOTE - use 3-l MA where appropriate (all apart from continuous MH symptoms)
 
 ## next, create bespoke forest plots for binary pecos...
 ## include in paper if MA is based on more than one study
@@ -1146,11 +1148,11 @@ metagen(TE = ln_est, seTE = se2, sm = paste(out_meas),
 ## checking HRs ------
 
 ## HR df
-hr_df <- ext_primary %>% filter(outcome_measure=="HR")
-
-ma_bin %>% filter(id==2120)
-ma_bin %>% filter(id==3965)
-ma_bin %>% filter(id==3738)
+#hr_df <- ext_primary %>% filter(outcome_measure=="HR")
+#
+#ma_bin %>% filter(id==2120)
+#ma_bin %>% filter(id==3965)
+#ma_bin %>% filter(id==3738)
 
 #------------------------------------------------------------------------------#
 #### Preparing continuous outcomes for MA 
@@ -1236,6 +1238,7 @@ for (i in seq_along(ma_cont_list)) {
 }
 
 #### Meta analyses and forest plots for main paper -----------------------------
+### NOTE - use 3-L versions in paper
 
 ### Function for MA/forest plots to be included in paper ----
 forest_paper2 <- function(exposure_lab, outcome_lab, out_meas,
@@ -1281,11 +1284,11 @@ forest_paper2(exposure_lab = "binary", outcome_lab = "Cholesterol",
 forest_paper2(exposure_lab = "binary", outcome_lab = "BMI",
               out_meas = "Adjusted mean difference")
 
-## Mental health symptoms ====> probs to check
+## Mental health symptoms 
 forest_paper2(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
               out_meas = "Regression coefficient")
 
-## Self-assessed health ====> check Cross (2009)
+## Self-assessed health 
 forest_paper2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
               out_meas = "Regression coefficient", w = 1000, h = 600)
 
@@ -1677,6 +1680,400 @@ forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Self-assessed health",
                   out_meas = "Regression coefficient", w = 1000, h = 600)
 
 #------------------------------------------------------------------------------#
+#### Three-level models 
+#------------------------------------------------------------------------------#
+
+## Data points taken from separate studies cannot be treated as entirely 
+## independent (e.g. sex stratified estimates, or different exposure groups 
+## using the same reference group).
+
+ma_bin <- ma_bin %>% 
+  group_by(sex, comparator_group) %>% 
+  mutate(comp_id = paste0(sex,", ",comparator_group)) %>% 
+  ungroup()
+
+#### Binary outcomes -----------------------------------------------------------
+### Function for MA/forest plots to be included in paper ----
+three_level_bin <- function(exposure_lab, outcome_lab, out_meas,
+                            w = 960, h = 480, type){
+  #if(exists("df_temp")) rm("df_temp", envir = globalenv())
+  #if(exists("ma_temp")) rm("ma_temp", envir = globalenv())
+  df_temp <<- ma_bin %>% filter(exposure_type == exposure_lab &
+                                  outcome_cat==outcome_lab)
+  ma_temp <<- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
+                      studlab = paste(study), 
+                      data = df_temp,
+                      byvar= exposure_topic, 
+                      id = comp_id,
+                      comb.fixed = FALSE, comb.random = TRUE)
+  
+  #produce and save forest plot
+  png(file = paste0("./charts/forest_plots/supplementary/sensitivity_analysis/three-level/binary_outcomes/3L_",outcome_lab,"_",exposure_lab,"_exp.png"),
+      width = w, height = h)
+  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+         subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
+  dev.off()
+  
+  # produce and save funnel plot
+  #png(file = paste0("./charts/funnel_plots/binary_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
+  #    width = w, height = h)
+  #funnel(ma_temp)
+  #dev.off()
+} # end of function ----
+
+### Binary outcomes
+## Alcohol consumption
+three_level_bin(exposure_lab = "binary", outcome_lab = "Alcohol consumption",
+                out_meas = "OR")
+
+## All-cause mortality
+three_level_bin(exposure_lab = "binary", outcome_lab = "All-cause mortality",
+                out_meas = "OR")
+
+## Chronic condition (excluded if Cross excluded from MA analysis)
+#forest_paper1(exposure_lab = "binary", outcome_lab = "Chronic condition",
+#             out_meas = "OR")
+
+## Mental health symptoms
+three_level_bin(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
+                out_meas = "OR",h = 800)
+
+## Self-assessed health
+# not currently working looks to be because Virtanen 2011 all comparisons of
+# single comparator group
+three_level_bin(exposure_lab = "binary", outcome_lab = "Self-assessed health",
+                out_meas = "OR")
+
+## Tobacco consumption
+three_level_bin(exposure_lab = "binary", outcome_lab = "Tobacco consumption",
+                out_meas = "OR")
+
+#### Continuous outcomes -------------------------------------------------------
+
+ma_cont <- ma_cont %>% 
+  group_by(sex, comparator_group) %>% 
+  mutate(comp_id = paste0(sex,", ",comparator_group)) %>% 
+  ungroup()
+
+## add further detail for Burgard studies
+ma_cont <- ma_cont %>% 
+  mutate(study = ifelse(study_id=="SR004", paste0(study," American’s Changing Lives"),
+                        ifelse(study_id=="SR005",paste0(study," Midlife in the United States"),
+                               study)))
+
+### Function for MA/forest plots to be included in paper ----
+three_level_cont <- function(exposure_lab, outcome_lab, out_meas,
+                             w = 960, h = 480, type){
+  if(exists("df_temp2")) rm("df_temp2", envir = globalenv())
+  if(exists("ma_temp2")) rm("ma_temp2", envir = globalenv())
+  df_temp2 <<- ma_cont %>% filter(exposure_type == exposure_lab &
+                                    outcome_cat==outcome_lab)
+  ma_temp2 <<- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
+                       studlab = paste(study),
+                       byvar = exposure_topic,
+                       data = df_temp2,
+                       id = comp_id,
+                       comb.fixed = FALSE, comb.random = TRUE)
+  
+  #produce and save forest plot
+  png(file = paste0("./charts/forest_plots/supplementary/sensitivity_analysis/three-level/continuous_outcomes/3L_",outcome_lab,"_",exposure_lab,"_exp.png"),
+      width = w, height = h)
+  forest(x = ma_temp2, leftcols = "studlab", overall = TRUE,
+         subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
+  dev.off()
+  
+  # produce and save funnel plot
+  #png(file = paste0("./charts/funnel_plots/continuous_outcomes/",outcome_lab,"_",exposure_lab,"_funnel.png"),
+  #    width = w, height = h)
+  #funnel(ma_temp2)
+  #dev.off()
+} ## end of function ----#
+
+
+### Continuous outcomes
+## Blood pressure - diastolic
+three_level_cont(exposure_lab = "binary", outcome_lab = "Diastolic blood pressure",
+                 out_meas = "Adjusted mean difference")
+
+## Cardiovascular
+three_level_cont(exposure_lab = "binary", outcome_lab = "Cholesterol",
+                 out_meas = "Adjusted mean difference")
+
+
+## Healthy weight
+three_level_cont(exposure_lab = "binary", outcome_lab = "BMI",
+                 out_meas = "Adjusted mean difference")
+
+## Mental health symptoms ====> three-level model not required
+#three_level_cont(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
+#              out_meas = "Regression coefficient")
+
+## Self-assessed health 
+three_level_cont(exposure_lab = "binary", outcome_lab = "Self-assessed health",
+                 out_meas = "Regression coefficient", w = 1000, h = 600)
+
+#### Male and female sub-group analysis 3-L MA --------------------------------
+
+#------------------------------------------------------------------------------#
+#### Males 
+#------------------------------------------------------------------------------#
+
+#### binary outcomes ---------
+
+males_bin <- males_bin %>% 
+  group_by(sex, comparator_group) %>% 
+  mutate(comp_id = paste0(sex,", ",comparator_group)) %>% 
+  ungroup()
+
+### Function for MA/forest plots to be included in sub-group analysis ----
+forest_paper_sub1 <- function(exposure_lab, outcome_lab, out_meas,
+                              w = 960, h = 480, type){
+  #if(exists("df_temp")) rm("df_temp", envir = globalenv())
+  #if(exists("ma_temp")) rm("ma_temp", envir = globalenv())
+  df_temp <<- males_bin %>% filter(exposure_type == exposure_lab &
+                                     outcome_cat==outcome_lab)
+  ma_temp <<- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
+                      studlab = paste(study), 
+                      data = df_temp,
+                      id = comp_id,
+                      comb.fixed = FALSE, comb.random = TRUE)
+  
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+                          comb.fixed = FALSE)
+  
+  #produce ans save forest plot
+  png(file = paste0("./charts/forest_plots/supplementary/binary_outcomes/three_level/males_",outcome_lab,"_",exposure_lab,"_exp.png"),
+      width = w, height = h)
+  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+         subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
+  dev.off()
+  
+  # produce and save funnel plot
+  png(file = paste0("./charts/funnel_plots/supplementary/binary_outcomes/males_",outcome_lab,"_",exposure_lab,"_exp.png"),
+      width = w, height = h)
+  funnel(ma_temp)
+  dev.off()
+  
+  
+} # end of function ----
+
+### Binary outcomes
+## Alcohol consumption
+forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Alcohol consumption",
+                  out_meas = "OR")
+
+## All-cause mortality
+forest_paper_sub1(exposure_lab = "binary", outcome_lab = "All-cause mortality",
+                  out_meas = "OR")
+
+## Chronic condition (excluded if Cross excluded from MA analysis)
+#forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Chronic condition",
+#             out_meas = "OR")
+
+## Mental health symptoms
+forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
+                  out_meas = "OR",h = 800)
+
+## Self-assessed health ## won't run as 3-L
+forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Self-assessed health",
+                  out_meas = "OR")
+
+## Tobacco consumption
+forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Tobacco consumption",
+                  out_meas = "OR")
+
+
+#### continuous outcomes ---------
+
+## create df for meta analyses of continuous outcomes
+males_cont <- males_cont %>% 
+  group_by(sex, comparator_group) %>% 
+  mutate(comp_id = paste0(sex,", ",comparator_group)) %>% 
+  ungroup()
+
+### Function for MA/forest plots to be included in paper ----
+forest_paper_sub2 <- function(exposure_lab, outcome_lab, out_meas,
+                              w = 960, h = 480, type){
+  if(exists("df_temp2")) rm("df_temp2", envir = globalenv())
+  if(exists("ma_temp2")) rm("ma_temp2", envir = globalenv())
+  df_temp2 <<- ma_cont %>% filter(exposure_type == exposure_lab &
+                                    outcome_cat==outcome_lab)
+  ma_temp2 <<- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
+                       studlab = paste(study), 
+                       data = df_temp2,
+                       id = comp_id,
+                       comb.fixed = FALSE, comb.random = TRUE)
+  
+  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, comb.random = TRUE, 
+                           comb.fixed = FALSE)
+  
+  #produce and save forest plot
+  png(file = paste0("./charts/forest_plots/supplementary/continuous_outcomes/three_level/males_",outcome_lab,"_",exposure_lab,"_exp.png"),
+      width = w, height = h)
+  forest(x = ma_temp2, leftcols = "studlab", overall = TRUE,
+         subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
+  dev.off()
+  
+  # produce and save funnel plot
+  #  png(file = paste0("./charts/funnel_plots/continuous_outcomes/",outcome_lab,"_",exposure_lab,"_funnel.png"),
+  #      width = w, height = h)
+  #  funnel(ma_temp2)
+  #  dev.off()
+} # end of function ----
+
+
+### Continuous outcomes
+## Blood pressure - diastolic
+forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Diastolic blood pressure",
+                  out_meas = "Adjusted mean difference")
+
+## Cardiovascular
+forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Cholesterol",
+                  out_meas = "Adjusted mean difference")
+
+
+## Healthy weight
+forest_paper_sub2(exposure_lab = "binary", outcome_lab = "BMI",
+                  out_meas = "Adjusted mean difference")
+
+## Mental health symptoms ====> doesn't require 3-L
+#forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
+#                  out_meas = "Regression coefficient")
+
+## Self-assessed health ====> check Cross (2009)
+forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
+                  out_meas = "Regression coefficient", w = 1000, h = 600)
+
+#------------------------------------------------------------------------------#
+#### Females 
+#------------------------------------------------------------------------------#
+
+females_bin <- females_bin %>% 
+  group_by(sex, comparator_group) %>% 
+  mutate(comp_id = paste0(sex,", ",comparator_group)) %>% 
+  ungroup()
+
+### Function for MA/forest plots to be included in sub-group analysis ----
+forest_paper_sub3 <- function(exposure_lab, outcome_lab, out_meas,
+                              w = 960, h = 480, type){
+  #if(exists("df_temp")) rm("df_temp", envir = globalenv())
+  #if(exists("ma_temp")) rm("ma_temp", envir = globalenv())
+  df_temp <<- females_bin %>% filter(exposure_type == exposure_lab &
+                                       outcome_cat==outcome_lab)
+  ma_temp <<- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
+                      studlab = paste(study), 
+                      data = df_temp,
+                      id = comp_id,
+                      comb.fixed = FALSE, comb.random = TRUE)
+  
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+                          comb.fixed = FALSE)
+  
+  #produce ans save forest plot
+  png(file = paste0("./charts/forest_plots/supplementary/binary_outcomes/three_level/females_",outcome_lab,"_",exposure_lab,"_exp.png"),
+      width = w, height = h)
+  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+         subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
+  dev.off()
+  
+  # produce and save funnel plot
+  png(file = paste0("./charts/funnel_plots/supplementary/binary_outcomes/females_",outcome_lab,"_",exposure_lab,"_exp.png"),
+      width = w, height = h)
+  funnel(ma_temp)
+  dev.off()
+  
+  
+} # end of function ----
+
+### Binary outcomes
+## Alcohol consumption
+forest_paper_sub3(exposure_lab = "binary", outcome_lab = "Alcohol consumption",
+                  out_meas = "OR")
+
+## All-cause mortality
+forest_paper_sub3(exposure_lab = "binary", outcome_lab = "All-cause mortality",
+                  out_meas = "OR")
+
+## Chronic condition (excluded if Cross excluded from MA analysis)
+#forest_paper_sub1(exposure_lab = "binary", outcome_lab = "Chronic condition",
+#             out_meas = "OR")
+
+## Mental health symptoms
+forest_paper_sub3(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
+                  out_meas = "OR",h = 800)
+
+## Self-assessed health
+forest_paper_sub3(exposure_lab = "binary", outcome_lab = "Self-assessed health",
+                  out_meas = "OR")
+
+## Tobacco consumption
+forest_paper_sub3(exposure_lab = "binary", outcome_lab = "Tobacco consumption",
+                  out_meas = "OR")
+
+#### continuous outcomes ---------
+
+## create df for meta analyses of continuous outcomes
+females_cont <- females_cont %>% 
+  group_by(sex, comparator_group) %>% 
+  mutate(comp_id = paste0(sex,", ",comparator_group)) %>% 
+  ungroup()
+
+### Function for MA/forest plots to be included in paper ----
+forest_paper_sub4 <- function(exposure_lab, outcome_lab, out_meas,
+                              w = 960, h = 480, type){
+  if(exists("df_temp2")) rm("df_temp2", envir = globalenv())
+  if(exists("ma_temp2")) rm("ma_temp2", envir = globalenv())
+  df_temp2 <<- ma_cont %>% filter(exposure_type == exposure_lab &
+                                    outcome_cat==outcome_lab)
+  ma_temp2 <<- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
+                       studlab = paste(study), 
+                       data = df_temp2,
+                       id = comp_id,
+                       comb.fixed = FALSE, comb.random = TRUE)
+  
+  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, comb.random = TRUE, 
+                           comb.fixed = FALSE)
+  
+  #produce and save forest plot
+  png(file = paste0("./charts/forest_plots/supplementary/continuous_outcomes/three_level/females_",outcome_lab,"_",exposure_lab,"_exp.png"),
+      width = w, height = h)
+  forest(x = ma_temp2, leftcols = "studlab", overall = TRUE,
+         subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
+  dev.off()
+  
+  # produce and save funnel plot
+  #  png(file = paste0("./charts/funnel_plots/continuous_outcomes/",outcome_lab,"_",exposure_lab,"_funnel.png"),
+  #      width = w, height = h)
+  #  funnel(ma_temp2)
+  #  dev.off()
+} # end of function ----
+
+
+### Continuous outcomes
+## Blood pressure - diastolic
+forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Diastolic blood pressure",
+                  out_meas = "Adjusted mean difference")
+
+## Cardiovascular
+forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Cholesterol",
+                  out_meas = "Adjusted mean difference")
+
+
+## Healthy weight
+forest_paper_sub4(exposure_lab = "binary", outcome_lab = "BMI",
+                  out_meas = "Adjusted mean difference")
+
+## Mental health symptoms ====> doesn't require 3-L
+#forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
+#                  out_meas = "Regression coefficient")
+
+## Self-assessed health ====> check Cross (2009)
+forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Self-assessed health",
+                  out_meas = "Regression coefficient", w = 1000, h = 600)
+
+
+
+#------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
 #####                         Sensitivity analysis                         #####
 #------------------------------------------------------------------------------#
@@ -1704,10 +2101,12 @@ forest_sa1 <- function(exposure_lab, outcome_lab, out_meas,
   ma_temp <<- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
                       studlab = paste(study), 
                       data = df_temp,
+                      byvar=exposure_topic, 
+#                      id = comp_id,
                       comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
-                          comb.fixed = FALSE)
+#  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+#                          comb.fixed = FALSE)
   
   #produce ans save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/sensitivity_analysis/binary_outcomes/sa_",outcome_lab,"_",exposure_lab,"_exp.png"),
@@ -1724,7 +2123,7 @@ forest_sa1 <- function(exposure_lab, outcome_lab, out_meas,
 } # end of function ----
 
 ### Binary outcomes
-## Alcohol consumption
+## Alcohol consumption - run as not 3-L
 forest_sa1(exposure_lab = "binary", outcome_lab = "Alcohol consumption",
            out_meas = "OR")
 
@@ -1736,7 +2135,7 @@ forest_sa1(exposure_lab = "binary", outcome_lab = "All-cause mortality",
 #forest_sa1(exposure_lab = "binary", outcome_lab = "Chronic condition",
 #             out_meas = "OR")
 
-## Mental health symptoms
+## Mental health symptoms == error
 forest_sa1(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
            out_meas = "OR",h = 800)
 
@@ -1744,7 +2143,7 @@ forest_sa1(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
 forest_sa1(exposure_lab = "binary", outcome_lab = "Self-assessed health",
            out_meas = "OR")
 
-## Tobacco consumption
+## Tobacco consumption == error
 forest_sa1(exposure_lab = "binary", outcome_lab = "Tobacco consumption",
            out_meas = "OR")
 
@@ -1764,12 +2163,14 @@ forest_sa2 <- function(exposure_lab, outcome_lab, out_meas,
   ma_temp <<- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
                       studlab = paste(study), 
                       data = df_temp,
+                      byvar= exposure_topic, 
+#                      id = comp_id,
                       comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
-                          comb.fixed = FALSE)
+#  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+#                          comb.fixed = FALSE)
   
-  #produce ans save forest plot
+  #produce and save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/sensitivity_analysis/continuous_outcomes/sa_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
   forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
@@ -1805,195 +2206,5 @@ forest_sa2(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
 forest_sa2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
            out_meas = "Regression coefficient", w = 1000, h = 600)
 
-#------------------------------------------------------------------------------#
-#### Three-level models 
-#------------------------------------------------------------------------------#
 
-## Data points taken from separate studies cannot be treated as entirely 
-## independent (e.g. sex stratified estimates, or different exposure groups 
-## using the same reference group).
-
-ma_bin <- ma_bin %>% 
-  group_by(study_id) %>% 
-  mutate(id_n = n()) %>% 
-  ungroup() %>% 
-  group_by(sex, comparator_group) %>% 
-  mutate(comp_id = paste0(sex,", ",comparator_group)) %>% 
-  ungroup()
-
-#### Binary outcomes -----------------------------------------------------------
-### Function for MA/forest plots to be included in paper ----
-three_level_bin <- function(exposure_lab, outcome_lab, out_meas,
-                            w = 960, h = 480, type){
-  #if(exists("df_temp")) rm("df_temp", envir = globalenv())
-  #if(exists("ma_temp")) rm("ma_temp", envir = globalenv())
-  df_temp <<- ma_bin %>% filter(exposure_type == exposure_lab &
-                                  outcome_cat==outcome_lab)
-  ma_temp <<- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
-                      studlab = paste(study), 
-                      data = df_temp,
-                      byvar= exposure_topic, 
-                      id = comp_id,
-                      comb.fixed = FALSE, comb.random = TRUE)
-
-  #produce and save forest plot
-  png(file = paste0("./charts/forest_plots/supplementary/sensitivity_analysis/three-level/binary_outcomes/3L_",outcome_lab,"_",exposure_lab,"_exp.png"),
-      width = w, height = h)
-  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
-         subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
-  dev.off()
-  
-  # produce and save funnel plot
-  #png(file = paste0("./charts/funnel_plots/binary_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
-  #    width = w, height = h)
-  #funnel(ma_temp)
-  #dev.off()
-} # end of function ----
-
-### Binary outcomes
-## Alcohol consumption
-three_level_bin(exposure_lab = "binary", outcome_lab = "Alcohol consumption",
-                out_meas = "OR")
-
-## All-cause mortality
-three_level_bin(exposure_lab = "binary", outcome_lab = "All-cause mortality",
-                out_meas = "OR")
-
-## Chronic condition (excluded if Cross excluded from MA analysis)
-#forest_paper1(exposure_lab = "binary", outcome_lab = "Chronic condition",
-#             out_meas = "OR")
-
-## Mental health symptoms
-three_level_bin(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
-                out_meas = "OR",h = 800)
-
-## Self-assessed health
-three_level_bin(exposure_lab = "binary", outcome_lab = "Self-assessed health",
-                out_meas = "OR")
-
-## Tobacco consumption
-three_level_bin(exposure_lab = "binary", outcome_lab = "Tobacco consumption",
-                out_meas = "OR")
-
-#### Continuous outcomes -------------------------------------------------------
-### Function for MA/forest plots to be included in paper ----
-three_level_cont <- function(exposure_lab, outcome_lab, out_meas,
-                             w = 960, h = 480, type){
-  if(exists("df_temp2")) rm("df_temp2", envir = globalenv())
-  if(exists("ma_temp2")) rm("ma_temp2", envir = globalenv())
-  df_temp2 <<- ma_cont %>% filter(exposure_type == exposure_lab &
-                                    outcome_cat==outcome_lab)
-  ma_temp2 <<- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
-                       studlab = paste(study), 
-                       data = df_temp2,
-                       comb.fixed = FALSE, comb.random = TRUE,
-                       id = study_id)
-  
-  #produce and save forest plot
-  png(file = paste0("./charts/forest_plots/supplementary/sensitivity_analysis/three-level/continuous_outcomes/3L_",outcome_lab,"_",exposure_lab,"_exp.png"),
-      width = w, height = h)
-  forest(x = ma_temp2, leftcols = "studlab", overall = TRUE,
-         subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
-  dev.off()
-  
-  # produce and save funnel plot
-  #png(file = paste0("./charts/funnel_plots/continuous_outcomes/",outcome_lab,"_",exposure_lab,"_funnel.png"),
-  #    width = w, height = h)
-  #funnel(ma_temp2)
-  #dev.off()
-} ## end of function ----#
-
-
-### Continuous outcomes
-## Blood pressure - diastolic
-three_level_cont(exposure_lab = "binary", outcome_lab = "Diastolic blood pressure",
-                 out_meas = "Adjusted mean difference")
-
-## Cardiovascular
-three_level_cont(exposure_lab = "binary", outcome_lab = "Cholesterol",
-                 out_meas = "Adjusted mean difference")
-
-
-## Healthy weight
-three_level_cont(exposure_lab = "binary", outcome_lab = "BMI",
-                 out_meas = "Adjusted mean difference")
-
-## Mental health symptoms ====> three-level model not rquired
-#three_level_cont(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
-#              out_meas = "Regression coefficient")
-
-## Self-assessed health ====> check Cross (2009)
-three_level_cont(exposure_lab = "binary", outcome_lab = "Self-assessed health",
-                 out_meas = "Regression coefficient", w = 1000, h = 600)
-
-
-
-##################### test area ################################################
-
-df_tempx <- ma_bin %>% filter(exposure_type == "binary" &
-                                outcome_cat=="Mental health symptoms" &
-                                outcome_measure == "OR") %>% 
-  group_by(study_id, sex) %>% 
-  mutate(indep_grp = cur_group_id()) %>% 
-  ungroup() %>% 
-  # create study var for display in forest plots
-  mutate(study = paste0(first_author," (",year_published,"); ",sex))
-
-#id_vector <- unique(df_tempx$study_id)
-
-ma_tempx <- metagen(TE = ln_est, seTE = se2, sm = paste("OR"), 
-                    data = df_tempx,
-                    studlab = paste(study), 
-                    #byvar=exposure_topic,
-                    comb.fixed = FALSE, 
-                    comb.random = TRUE,
-                    method.tau = "REML",
-                    hakn = FALSE,
-                    prediction = FALSE,
-                    id = study)
-
-
-ma_tempx <- update.meta(ma_tempx, byvar=exposure_topic, comb.random = TRUE, 
-                        comb.fixed = FALSE,
-                        tau.common =  TRUE,
-                        id = study)
-
-#forest_temp <- 
-forest(x = ma_tempx, leftcols = "studlab", addrow = TRUE)
-
-library(metaforest)
-
-df_tempx <- df_tempx %>% mutate(v = se2*se2)
-
-m_multi <- rma.mv(ln_est, v, random = list(~ 1 | dp_id, ~ 1 | study), data = df_tempx)
-m_multi
-
-
-#### 3-l test 20210919
-
-
-df_temp3l <- ma_bin %>% 
-  filter(exposure_type == "binary" &
-                                  outcome_cat=="Mental health symptoms") %>% 
-  group_by(sex, comparator_group) %>% 
-  mutate(comp_id = paste0(sex,", ",comparator_group)) %>% 
-  ungroup()
-
-
-
-ma_temp3l <- metagen(TE = ln_est, seTE = se2, sm = "OR", 
-                      studlab = paste(study), 
-                      data = df_temp3l,
-                      byvar= exposure_topic, 
-                      id = comp_id,
-                      comb.fixed = FALSE, comb.random = TRUE)
-
-  #produce ans save forest plot
-forest(x = ma_temp3l, leftcols = "studlab", overall = TRUE,
-       subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
-
-### Binary outcomes
-## Alcohol consumption
-three_level_bin(exposure_lab = "binary", outcome_lab = "Alcohol consumption",
-                out_meas = "OR")
 
