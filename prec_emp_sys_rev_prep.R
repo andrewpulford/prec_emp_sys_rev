@@ -859,7 +859,7 @@ sign_df$upci <- 0
 for(i in 1:25){
   u <- sign_df[[i,3]]
   n <- sign_df[[i,4]]
-  binom_temp <- binom.test(u,n, ci.method = "Wilson")
+  binom_temp <- binom.test(u,n)
   binom_temp <- data.frame(unlist(binom_temp))
   #  label <- sign_df[[i,1]]
   #  assign(paste0("binom_",label), binom_temp)
@@ -879,7 +879,8 @@ write.csv(sign_df, "./data/working/sign_test.csv")
 ## descriptives 
 
 # number of dp's by outcome category and RoB global rating
-table(harvest_df$global_rating, harvest_df$outcome_cat)
+table(harvest_sa$global_rating, harvest_sa$outcome_cat)
+
 
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
@@ -1443,7 +1444,7 @@ forest_paper_sub2 <- function(exposure_lab, outcome_lab, out_meas,
                               w = 960, h = 480, type){
   if(exists("df_temp2")) rm("df_temp2", envir = globalenv())
   if(exists("ma_temp2")) rm("ma_temp2", envir = globalenv())
-  df_temp2 <<- ma_cont %>% filter(exposure_type == exposure_lab &
+  df_temp2 <<- males_cont %>% filter(exposure_type == exposure_lab &
                                     outcome_cat==outcome_lab)
   ma_temp2 <<- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
                        studlab = paste(study), 
@@ -1482,11 +1483,11 @@ forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Cholesterol",
 forest_paper_sub2(exposure_lab = "binary", outcome_lab = "BMI",
                   out_meas = "Adjusted mean difference")
 
-## Mental health symptoms ====> probs to check
+## Mental health symptoms ====> no studies to combine
 forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
                   out_meas = "Regression coefficient")
 
-## Self-assessed health ====> check Cross (2009)
+## Self-assessed health ====> no studies to combine
 forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
                   out_meas = "Regression coefficient", w = 1000, h = 600)
 
@@ -1632,7 +1633,7 @@ forest_paper_sub4 <- function(exposure_lab, outcome_lab, out_meas,
                               w = 960, h = 480, type){
   if(exists("df_temp2")) rm("df_temp2", envir = globalenv())
   if(exists("ma_temp2")) rm("ma_temp2", envir = globalenv())
-  df_temp2 <<- ma_cont %>% filter(exposure_type == exposure_lab &
+  df_temp2 <<- females_cont %>% filter(exposure_type == exposure_lab &
                                     outcome_cat==outcome_lab)
   ma_temp2 <<- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
                        studlab = paste(study), 
@@ -1671,11 +1672,11 @@ forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Cholesterol",
 forest_paper_sub4(exposure_lab = "binary", outcome_lab = "BMI",
                   out_meas = "Adjusted mean difference")
 
-## Mental health symptoms ====> probs to check
+## Mental health symptoms ====> no studies to combine
 forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
                   out_meas = "Regression coefficient")
 
-## Self-assessed health ====> check Cross (2009)
+## Self-assessed health ====> no studies to combine
 forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Self-assessed health",
                   out_meas = "Regression coefficient", w = 1000, h = 600)
 
@@ -1703,10 +1704,13 @@ three_level_bin <- function(exposure_lab, outcome_lab, out_meas,
   ma_temp <<- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
                       studlab = paste(study), 
                       data = df_temp,
-                      byvar= exposure_topic, 
+ #                     byvar= exposure_topic, 
                       id = comp_id,
                       comb.fixed = FALSE, comb.random = TRUE)
   
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+                           comb.fixed = FALSE)
+    
   #produce and save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/sensitivity_analysis/three-level/binary_outcomes/3L_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
@@ -1896,7 +1900,7 @@ forest_paper_sub2 <- function(exposure_lab, outcome_lab, out_meas,
                               w = 960, h = 480, type){
   if(exists("df_temp2")) rm("df_temp2", envir = globalenv())
   if(exists("ma_temp2")) rm("ma_temp2", envir = globalenv())
-  df_temp2 <<- ma_cont %>% filter(exposure_type == exposure_lab &
+  df_temp2 <<- males_cont %>% filter(exposure_type == exposure_lab &
                                     outcome_cat==outcome_lab)
   ma_temp2 <<- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
                        studlab = paste(study), 
@@ -1940,7 +1944,7 @@ forest_paper_sub2(exposure_lab = "binary", outcome_lab = "BMI",
 #forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
 #                  out_meas = "Regression coefficient")
 
-## Self-assessed health ====> check Cross (2009)
+## Self-assessed health ====> won't run
 forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
                   out_meas = "Regression coefficient", w = 1000, h = 600)
 
@@ -2023,7 +2027,7 @@ forest_paper_sub4 <- function(exposure_lab, outcome_lab, out_meas,
                               w = 960, h = 480, type){
   if(exists("df_temp2")) rm("df_temp2", envir = globalenv())
   if(exists("ma_temp2")) rm("ma_temp2", envir = globalenv())
-  df_temp2 <<- ma_cont %>% filter(exposure_type == exposure_lab &
+  df_temp2 <<- females_cont %>% filter(exposure_type == exposure_lab &
                                     outcome_cat==outcome_lab)
   ma_temp2 <<- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
                        studlab = paste(study), 
@@ -2067,7 +2071,7 @@ forest_paper_sub4(exposure_lab = "binary", outcome_lab = "BMI",
 #forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
 #                  out_meas = "Regression coefficient")
 
-## Self-assessed health ====> check Cross (2009)
+## Self-assessed health ====> won't run
 forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Self-assessed health",
                   out_meas = "Regression coefficient", w = 1000, h = 600)
 
@@ -2082,6 +2086,225 @@ forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Self-assessed health",
 #------------------------------------------------------------------------------#
 #### Exclude high risk of bias studies 
 #------------------------------------------------------------------------------#
+
+##### harvest plots and sign tests - sensitivity analysis ----------------------
+
+harvest_sa <- harvest_df %>% 
+  left_join(rob_fin_global) %>% # add in risk of bias score
+  filter(global_rating != 3)
+
+
+#### general health ------------------
+## number of dps by outcome category and effect direction
+harvest_sa %>%
+  filter(outcome_topic_s=="General health") %>% 
+  group_by(outcome_cat, harvest_lab) %>% 
+  summarise(n = n()) %>% 
+  print() %>% 
+  ungroup()
+
+# plot
+harvest_sa_gen <- harvest_sa %>%
+  filter(outcome_topic_s=="General health") %>% 
+  ggplot(aes(x=position, y = height, fill = exposure_topic)) +
+  geom_col(width = 0.5) + 
+  #  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  xlim(0,56) +
+  facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  scale_fill_discrete(name  ="Exposure topic:") +
+  theme_bw() +
+  theme(text = element_text(size=20),
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        strip.placement = "outside",
+        strip.text.y = element_text(size = 12),
+        strip.text.y.left = element_text(angle = 0)) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
+harvest_sa_gen
+
+png("./charts/harvest_plots/png/sensitivity_analysis/harvest_sa_gen.png", 
+    width = 960, height = 400)
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(harvest_sa_gen)
+dev.off()
+
+#### mental health ---------------
+## number of dps by outcome category and effect direction
+harvest_sa %>%
+  filter(outcome_topic_s=="Mental health") %>% 
+  group_by(outcome_cat, harvest_lab) %>% 
+  summarise(n = n()) %>% 
+  print() %>% 
+  ungroup()
+
+# plot
+harvest_sa_mh <- harvest_sa %>%
+  filter(!is.na(harvest_dir)) %>%  # temp line
+  filter(outcome_topic_s=="Mental health") %>% 
+  ggplot(aes(x=position, y = height, fill = exposure_topic)) +
+  geom_col(width = 0.5) + 
+  #  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  xlim(0,56) +
+  facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  scale_fill_discrete(name  ="Exposure topic:") +
+  theme_bw() +
+  theme(text = element_text(size=20),
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        strip.placement = "outside",
+        strip.text.y = element_text(size = 12),
+        strip.text.y.left = element_text(angle = 0)) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
+harvest_sa_mh
+
+png("./charts/harvest_plots/png/sensitivity_analysis/harvest_sa_mh.png", 
+    width = 960, height = 200)
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(harvest_sa_mh)
+dev.off()
+
+
+#### physical health ------------------
+
+## number of dps by outcome category and effect direction
+harvest_sa %>%
+  filter(outcome_topic_s=="Physical health") %>% 
+  group_by(outcome_cat, harvest_lab) %>% 
+  summarise(n = n()) %>% 
+  print() %>% 
+  ungroup()
+
+harvest_sa_phys <- harvest_sa %>%
+  filter(outcome_topic_s=="Physical health") %>% 
+  ggplot(aes(x=position, y = height, fill = exposure_topic)) +
+  geom_col(width = 0.5) + 
+  #  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  xlim(0,56) +
+  facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  scale_fill_discrete(name  ="Exposure topic:") +
+  theme_bw() +
+  theme(text = element_text(size=20),
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        strip.placement = "outside",
+        strip.text.y = element_text(size = 12),
+        strip.text.y.left = element_text(angle = 0)) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
+harvest_sa_phys
+
+## save
+png("./charts/harvest_plots/png/sensitivity_analysis/harvest_sa_phys.png", 
+    width = 960, height = 960)
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(harvest_sa_phys)
+dev.off()
+
+
+#### health behaviours --------------------------
+## number of dps by outcome category and effect direction
+harvest_sa %>%
+  filter(outcome_topic_s=="Health behaviours") %>% 
+  group_by(outcome_cat, harvest_lab) %>% 
+  summarise(n = n()) %>% 
+  print() %>% 
+  ungroup()
+
+# plot
+harvest_sa_behav <- harvest_sa %>%
+  filter(outcome_topic_s=="Health behaviours") %>% 
+  ggplot(aes(x=position, y = height, fill = exposure_topic)) +
+  geom_col(width = 0.5) + 
+  #  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+  xlim(0,56) +
+  facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+  scale_fill_discrete(name  ="Exposure topic:") +
+  theme_bw() +
+  theme(text = element_text(size=20),
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        strip.placement = "outside",
+        strip.text.y = element_text(size = 12),
+        strip.text.y.left = element_text(angle = 0)) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
+harvest_sa_behav
+## save
+png("./charts/harvest_plots/png/sensitivity_analysis/harvest_sa_behav.png", 
+    width = 960, height = 480)
+par(mar=c(5,3,2,2)+0.1) # removes margins
+print(harvest_sa_behav)
+dev.off()
+
+#### Narrative synthesis sign tests --------
+
+sign_sa <- harvest_sa %>% 
+  # recode harvest_dir variable to 1/0 binary
+  mutate(sign_dir = ifelse(harvest_dir == -1, 0, 1)) %>% 
+  group_by(outcome_topic_s, outcome_cat) %>% 
+  # create vars for sign test calculation:
+  # u = number of negative outcomes  within outcome category
+  # n = total number of dp's within outcome category
+  summarise(u = sum(sign_dir),
+            n = n()) %>% 
+  # calculate proportion of dp's with negative outcome estimate
+  mutate(prop_neg = u/n) %>% 
+  ungroup()
+
+sign_sa$biom_p <- 0
+sign_sa$lowci <- 0
+sign_sa$upci <- 0
+
+for(i in 1:22){
+  u <- sign_sa[[i,3]]
+  n <- sign_sa[[i,4]]
+  binom_temp <- binom.test(u,n)
+  binom_temp <- data.frame(unlist(binom_temp))
+  #  label <- sign_df[[i,1]]
+  #  assign(paste0("binom_",label), binom_temp)
+  # assign p value
+  sign_sa[i,6] <- as.numeric(binom_temp[3,])
+  # assign confidence intervals
+  sign_sa[i,7] <- as.numeric(binom_temp[4,])
+  sign_sa[i,8] <- as.numeric(binom_temp[5,])
+  
+  
+} # end of function
+
+
+
+write.csv(sign_sa, "./data/working/sign_test_SA.csv")
+
+## descriptives 
+
+# number of dp's by outcome category and RoB global rating
+table(harvest_df$global_rating, harvest_df$outcome_cat)
+
+
+
+##### Meta analysis - SA -------------------------------------------------------
 
 # change id to factor to allow join
 #rob_fin_global$id <- factor(rob_fin_global$id)
