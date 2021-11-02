@@ -879,7 +879,7 @@ write.csv(sign_df, "./data/working/sign_test.csv")
 ## descriptives 
 
 # number of dp's by outcome category and RoB global rating
-table(harvest_sa$global_rating, harvest_sa$outcome_cat)
+table(harvest_df$global_rating, harvest_df$outcome_cat)
 
 
 #------------------------------------------------------------------------------#
@@ -967,6 +967,8 @@ ma_bin <- ext_primary %>%
   filter(outcome_type=="binary" & 
            ma == 1 & 
            comparator_cat == "Persistent stable/low exposure") %>% 
+  # recode sex "Both" to Both sexes"
+  mutate(sex = ifelse(sex=="Both","Both sexes",sex)) %>% 
   #  filter(outcome_measure=="OR" | outcome_measure == "HR") %>% # filter only ORs and HRs
   # convert variables to numeric to allow calculations
   mutate(estimate = as.numeric(estimate),
@@ -1036,7 +1038,8 @@ for (i in seq_along(ma_bin_list)) {
 for (i in seq_along(ma_bin_list)) {
   png(file = paste0("./charts/forest_plots/png/binary/",ma_bin_labs[[i]],".png"), 
       width = 960, height = 480)
-  forest_temp <- forest(x = ma_bin_list[[i]], leftcols = "studlab", addrow = TRUE)
+  forest_temp <- forest(x = ma_bin_list[[i]], 
+                        leftcols = "studlab", addrow = TRUE)
   dev.off()
 }
 
@@ -1066,13 +1069,15 @@ forest_paper1 <- function(exposure_lab, outcome_lab, out_meas,
                       data = df_temp,
                       comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic,  
+                          bylab = "Exposure topic",comb.random = TRUE, 
                           comb.fixed = FALSE)
   
   #produce ans save forest plot
   png(file = paste0("./charts/forest_plots/paper/binary_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp,
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -1124,13 +1129,15 @@ forest_supp <- function(exposure_lab, outcome_lab, w = 960, h = 480, type){
                       data = df_temp,
                       comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, 
+                          bylab = "Exposure topic", comb.random = TRUE, 
                           comb.fixed = FALSE)
   
   #produce and save forest plot
   png(file = paste0("./charts/forest_plots/paper/",outcome_lab,"_",exposure_lab,".png"),
       width = w, height = h)
-  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp,
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -1164,6 +1171,8 @@ ma_cont <- ext_primary %>%
   filter(outcome_type=="continuous" & 
            ma == 1 & 
            comparator_cat == "Persistent stable/low exposure") %>% 
+  # recode sex "Both" to Both sexes"
+  mutate(sex = ifelse(sex=="Both","Both sexes",sex)) %>% 
   # convert variables to numeric to allow calculations
   mutate(estimate = as.numeric(estimate),
          lowci = as.numeric(lowci),
@@ -1185,8 +1194,8 @@ ma_cont <- ext_primary %>%
   filter(first_author != "Cross, J")  %>% 
   # remove MH symptoms DPs that don't use CES-D
   filter(outcome_cat!="Mental health symptoms" |
-           (outcome_cat=="Mental health symptoms" & study=="Burgard, S (2017); Both; persistently insecure at T1 and T2") |
-           (outcome_cat=="Mental health symptoms" & study=="Glavin, P (2015); Both; Persistent insecurity")) %>% 
+           (outcome_cat=="Mental health symptoms" & study=="Burgard, S (2017); Both sexes; persistently insecure at T1 and T2") |
+           (outcome_cat=="Mental health symptoms" & study=="Glavin, P (2015); Both sexes; Persistent insecurity")) %>% 
   # separate out diastolic blood pressure
   mutate(outcome_cat = ifelse(grepl("diastolic", definition_of_outcome), "Diastolic blood pressure", outcome_cat)) %>% 
   # separate out cholesterol
@@ -1225,7 +1234,8 @@ for(i in 1:cont_spine_length){
 for (i in seq_along(ma_cont_list)) {
   tiff(file = paste0("./charts/forest_plots/tiff/continuous/",ma_cont_labs[[i]],".tiff"), 
        width = 960, height = 480)
-  forest_temp <- forest(x = ma_cont_list[[i]], leftcols = "studlab", addrow = TRUE)
+  forest_temp <- forest(x = ma_cont_list[[i]],
+                        leftcols = "studlab", addrow = TRUE)
   dev.off()
 }
 
@@ -1242,7 +1252,7 @@ for (i in seq_along(ma_cont_list)) {
 ### NOTE - use 3-L versions in paper
 
 ### Function for MA/forest plots to be included in paper ----
-forest_paper2 <- function(exposure_lab, outcome_lab, out_meas,
+forest_paper2 <- function(exposure_lab, outcome_lab, out_meas, x_lab,
                           w = 960, h = 480, type){
   if(exists("df_temp2")) rm("df_temp2", envir = globalenv())
   if(exists("ma_temp2")) rm("ma_temp2", envir = globalenv())
@@ -1253,13 +1263,14 @@ forest_paper2 <- function(exposure_lab, outcome_lab, out_meas,
                        data = df_temp2,
                        comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, comb.random = TRUE, 
-                           comb.fixed = FALSE)
+  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, bylab = "Exposure topic",
+                           comb.random = TRUE, comb.fixed = FALSE)
   
   #produce and save forest plot
   png(file = paste0("./charts/forest_plots/paper/continuous_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp2, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp2, xlab = x_lab,
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -1274,24 +1285,30 @@ forest_paper2 <- function(exposure_lab, outcome_lab, out_meas,
 ### Continuous outcomes
 ## Blood pressure - diastolic
 forest_paper2(exposure_lab = "binary", outcome_lab = "Diastolic blood pressure",
-              out_meas = "Adjusted mean difference")
+              out_meas = "Adjusted mean difference", 
+              x_lab = "Adjusted mean difference in diastolic blood pressure (mmHg)")
 
 ## Cardiovascular
 forest_paper2(exposure_lab = "binary", outcome_lab = "Cholesterol",
-              out_meas = "Adjusted mean difference")
+              out_meas = "Adjusted mean difference",
+              x_lab = "Adjusted mean difference in cholesterol (mmol)")
 
 
 ## Healthy weight
 forest_paper2(exposure_lab = "binary", outcome_lab = "BMI",
-              out_meas = "Adjusted mean difference")
+              out_meas = "Adjusted mean difference",
+              x_lab = "Adjusted mean difference in body mass index")
 
 ## Mental health symptoms 
 forest_paper2(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
-              out_meas = "Regression coefficient")
+              out_meas = "Regression coefficient",
+              x_lab = "Difference in CES-D scale")
 
 ## Self-assessed health 
 forest_paper2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
-              out_meas = "Regression coefficient", w = 1000, h = 600)
+              out_meas = "Regression coefficient", 
+              x_lab = "Difference in five-point self-rated health scale",
+              w = 1000, h = 600)
 
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
@@ -1359,13 +1376,14 @@ forest_paper_sub1 <- function(exposure_lab, outcome_lab, out_meas,
                       data = df_temp,
                       comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
-                          comb.fixed = FALSE)
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, bylab = "Exposure topic",
+                          comb.random = TRUE, comb.fixed = FALSE)
   
   #produce ans save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/binary_outcomes/males_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp, 
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -1451,13 +1469,14 @@ forest_paper_sub2 <- function(exposure_lab, outcome_lab, out_meas,
                        data = df_temp2,
                        comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, comb.random = TRUE, 
-                           comb.fixed = FALSE)
+  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, bylab = "Exposure topic",
+                           comb.random = TRUE, comb.fixed = FALSE)
   
   #produce and save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/continuous_outcomes/males_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp2, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp2, 
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -1549,13 +1568,14 @@ forest_paper_sub3 <- function(exposure_lab, outcome_lab, out_meas,
                       data = df_temp,
                       comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
-                          comb.fixed = FALSE)
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, bylab = "Exposure topic",
+                          comb.random = TRUE, comb.fixed = FALSE)
   
   #produce ans save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/binary_outcomes/females_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp, 
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -1640,13 +1660,14 @@ forest_paper_sub4 <- function(exposure_lab, outcome_lab, out_meas,
                        data = df_temp2,
                        comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, comb.random = TRUE, 
-                           comb.fixed = FALSE)
+  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, bylab = "Exposure topic",
+                           comb.random = TRUE, comb.fixed = FALSE)
   
   #produce and save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/continuous_outcomes/females_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp2, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp2, 
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -1708,13 +1729,14 @@ three_level_bin <- function(exposure_lab, outcome_lab, out_meas,
                       id = comp_id,
                       comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
-                           comb.fixed = FALSE)
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, bylab = "Exposure topic",
+                          comb.random = TRUE, comb.fixed = FALSE)
     
   #produce and save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/sensitivity_analysis/three-level/binary_outcomes/3L_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp, 
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -1766,7 +1788,7 @@ ma_cont <- ma_cont %>%
                                study)))
 
 ### Function for MA/forest plots to be included in paper ----
-three_level_cont <- function(exposure_lab, outcome_lab, out_meas,
+three_level_cont <- function(exposure_lab, outcome_lab, out_meas, x_lab,
                              w = 960, h = 480, type){
   if(exists("df_temp2")) rm("df_temp2", envir = globalenv())
   if(exists("ma_temp2")) rm("ma_temp2", envir = globalenv())
@@ -1775,6 +1797,7 @@ three_level_cont <- function(exposure_lab, outcome_lab, out_meas,
   ma_temp2 <<- metagen(TE = estimate, seTE = se2, sm = paste(out_meas), 
                        studlab = paste(study),
                        byvar = exposure_topic,
+                       bylab = "Exposure topic",
                        data = df_temp2,
                        id = comp_id,
                        comb.fixed = FALSE, comb.random = TRUE)
@@ -1782,7 +1805,8 @@ three_level_cont <- function(exposure_lab, outcome_lab, out_meas,
   #produce and save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/sensitivity_analysis/three-level/continuous_outcomes/3L_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp2, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp2, xlab = x_lab,
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -1797,16 +1821,19 @@ three_level_cont <- function(exposure_lab, outcome_lab, out_meas,
 ### Continuous outcomes
 ## Blood pressure - diastolic
 three_level_cont(exposure_lab = "binary", outcome_lab = "Diastolic blood pressure",
-                 out_meas = "Adjusted mean difference")
+                 out_meas = "Adjusted mean difference",
+                 x_lab = "Adjusted mean difference in diastolic blood pressure (mmHg)")
 
 ## Cardiovascular
 three_level_cont(exposure_lab = "binary", outcome_lab = "Cholesterol",
-                 out_meas = "Adjusted mean difference")
+                 out_meas = "Adjusted mean difference",
+                 x_lab = "Adjusted mean difference in cholesterol (mmol)")
 
 
 ## Healthy weight
 three_level_cont(exposure_lab = "binary", outcome_lab = "BMI",
-                 out_meas = "Adjusted mean difference")
+                 out_meas = "Adjusted mean difference",
+                 x_lab = "Adjusted mean difference in body mass index")
 
 ## Mental health symptoms ====> three-level model not required
 #three_level_cont(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
@@ -1814,7 +1841,9 @@ three_level_cont(exposure_lab = "binary", outcome_lab = "BMI",
 
 ## Self-assessed health 
 three_level_cont(exposure_lab = "binary", outcome_lab = "Self-assessed health",
-                 out_meas = "Regression coefficient", w = 1000, h = 600)
+                 out_meas = "Regression coefficient", 
+                 x_lab = "Difference in five-point self-rated health scale",
+                 w = 1100, h = 600)
 
 #### Male and female sub-group analysis 3-L MA --------------------------------
 
@@ -1842,13 +1871,14 @@ forest_paper_sub1 <- function(exposure_lab, outcome_lab, out_meas,
                       id = comp_id,
                       comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
-                          comb.fixed = FALSE)
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, bylab = "Exposure topic",
+                          comb.random = TRUE, comb.fixed = FALSE)
   
   #produce ans save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/binary_outcomes/three_level/males_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp, 
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -1908,13 +1938,14 @@ forest_paper_sub2 <- function(exposure_lab, outcome_lab, out_meas,
                        id = comp_id,
                        comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, comb.random = TRUE, 
-                           comb.fixed = FALSE)
+  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, bylab = "Exposure topic",
+                           comb.random = TRUE, comb.fixed = FALSE)
   
   #produce and save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/continuous_outcomes/three_level/males_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp2, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp2,
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -1970,13 +2001,14 @@ forest_paper_sub3 <- function(exposure_lab, outcome_lab, out_meas,
                       id = comp_id,
                       comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
-                          comb.fixed = FALSE)
+  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, bylab = "Exposure topic",
+                          comb.random = TRUE, comb.fixed = FALSE)
   
   #produce ans save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/binary_outcomes/three_level/females_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp, 
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -2035,13 +2067,14 @@ forest_paper_sub4 <- function(exposure_lab, outcome_lab, out_meas,
                        id = comp_id,
                        comb.fixed = FALSE, comb.random = TRUE)
   
-  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, comb.random = TRUE, 
-                           comb.fixed = FALSE)
+  ma_temp2 <<- update.meta(ma_temp2, byvar=exposure_topic, bylab = "Exposure topic",
+                           comb.random = TRUE, comb.fixed = FALSE)
   
   #produce and save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/continuous_outcomes/three_level/females_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp2, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp2, 
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -2328,13 +2361,15 @@ forest_sa1 <- function(exposure_lab, outcome_lab, out_meas,
 #                      id = comp_id,
                       comb.fixed = FALSE, comb.random = TRUE)
   
-#  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+#  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, bylab = "Exposure topic",
+#                          comb.random = TRUE, 
 #                          comb.fixed = FALSE)
   
   #produce ans save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/sensitivity_analysis/binary_outcomes/sa_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp, 
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
@@ -2390,13 +2425,15 @@ forest_sa2 <- function(exposure_lab, outcome_lab, out_meas,
 #                      id = comp_id,
                       comb.fixed = FALSE, comb.random = TRUE)
   
-#  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, comb.random = TRUE, 
+#  ma_temp <<- update.meta(ma_temp, byvar=exposure_topic, bylab = "Exposure topic",
+#                          comb.random = TRUE, 
 #                          comb.fixed = FALSE)
   
   #produce and save forest plot
   png(file = paste0("./charts/forest_plots/supplementary/sensitivity_analysis/continuous_outcomes/sa_",outcome_lab,"_",exposure_lab,"_exp.png"),
       width = w, height = h)
-  forest(x = ma_temp, leftcols = "studlab", overall = TRUE,
+  forest(x = ma_temp, 
+         leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
   dev.off()
   
