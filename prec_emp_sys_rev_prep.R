@@ -612,6 +612,9 @@ harvest_df %>%
 # plot
 harvest_gen <- harvest_df %>%
   filter(outcome_topic_s=="General health") %>% 
+  # reword SAH to SRH for plot
+  mutate(outcome_cat = ifelse(outcome_cat=="Self-assessed health",
+                              "Self-rated health", outcome_cat )) %>% 
   ggplot(aes(x=position, y = height, fill = exposure_topic)) +
   geom_col(width = 0.5) + 
   #  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
@@ -695,6 +698,9 @@ harvest_df %>%
 
 harvest_phys <- harvest_df %>%
   filter(outcome_topic_s=="Physical health") %>% 
+  # reword chronic conditions
+  mutate(outcome_cat = ifelse(outcome_cat=="Chronic condition",
+                              "Chronic conditions", outcome_cat )) %>% 
   ggplot(aes(x=position, y = height, fill = exposure_topic)) +
   geom_col(width = 0.5) + 
   #  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
@@ -1083,7 +1089,7 @@ forest_paper1 <- function(exposure_lab, outcome_lab, out_meas,
   
   # produce and save funnel plot
   png(file = paste0("./charts/funnel_plots/binary_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
-      width = w, height = h)
+      width = 400, height = 400)
   funnel(ma_temp)
   dev.off()
 } # end of function ----
@@ -1276,7 +1282,7 @@ forest_paper2 <- function(exposure_lab, outcome_lab, out_meas, x_lab,
   
   # produce and save funnel plot
   png(file = paste0("./charts/funnel_plots/continuous_outcomes/",outcome_lab,"_",exposure_lab,"_funnel.png"),
-      width = w, height = h)
+      width = 400, height = 400)
   funnel(ma_temp2)
   dev.off()
 } # end of function ----
@@ -1389,7 +1395,7 @@ forest_paper_sub1 <- function(exposure_lab, outcome_lab, out_meas,
   
   # produce and save funnel plot
   png(file = paste0("./charts/funnel_plots/supplementary/binary_outcomes/males_",outcome_lab,"_",exposure_lab,"_exp.png"),
-      width = w, height = h)
+      width = 400, height = 400)
   funnel(ma_temp)
   dev.off()
   
@@ -1482,7 +1488,7 @@ forest_paper_sub2 <- function(exposure_lab, outcome_lab, out_meas,
   
   # produce and save funnel plot
   #  png(file = paste0("./charts/funnel_plots/continuous_outcomes/",outcome_lab,"_",exposure_lab,"_funnel.png"),
-  #      width = w, height = h)
+  #      width = 400, height = 400)
   #  funnel(ma_temp2)
   #  dev.off()
 } # end of function ----
@@ -1503,12 +1509,12 @@ forest_paper_sub2(exposure_lab = "binary", outcome_lab = "BMI",
                   out_meas = "Adjusted mean difference")
 
 ## Mental health symptoms ====> no studies to combine
-forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
-                  out_meas = "Regression coefficient")
+#forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
+#                  out_meas = "Regression coefficient")
 
 ## Self-assessed health ====> no studies to combine
-forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
-                  out_meas = "Regression coefficient", w = 1000, h = 600)
+#forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
+#                  out_meas = "Regression coefficient", w = 1000, h = 600)
 
 #------------------------------------------------------------------------------#
 #### Females 
@@ -1581,7 +1587,7 @@ forest_paper_sub3 <- function(exposure_lab, outcome_lab, out_meas,
   
   # produce and save funnel plot
   png(file = paste0("./charts/funnel_plots/supplementary/binary_outcomes/females_",outcome_lab,"_",exposure_lab,"_exp.png"),
-      width = w, height = h)
+      width = 400, height = 400)
   funnel(ma_temp)
   dev.off()
   
@@ -1673,7 +1679,7 @@ forest_paper_sub4 <- function(exposure_lab, outcome_lab, out_meas,
   
   # produce and save funnel plot
   #  png(file = paste0("./charts/funnel_plots/continuous_outcomes/",outcome_lab,"_",exposure_lab,"_funnel.png"),
-  #      width = w, height = h)
+  #     width = 400, height = 400)
   #  funnel(ma_temp2)
   #  dev.off()
 } # end of function ----
@@ -1694,12 +1700,12 @@ forest_paper_sub4(exposure_lab = "binary", outcome_lab = "BMI",
                   out_meas = "Adjusted mean difference")
 
 ## Mental health symptoms ====> no studies to combine
-forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
-                  out_meas = "Regression coefficient")
+#forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
+#                  out_meas = "Regression coefficient")
 
 ## Self-assessed health ====> no studies to combine
-forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Self-assessed health",
-                  out_meas = "Regression coefficient", w = 1000, h = 600)
+#forest_paper_sub4(exposure_lab = "binary", outcome_lab = "Self-assessed health",
+#                  out_meas = "Regression coefficient", w = 1000, h = 600)
 
 #------------------------------------------------------------------------------#
 #### Three-level models 
@@ -1742,7 +1748,7 @@ three_level_bin <- function(exposure_lab, outcome_lab, out_meas,
   
   # produce and save funnel plot
   #png(file = paste0("./charts/funnel_plots/binary_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
-  #    width = w, height = h)
+  #    width = 400, height = 400)
   #funnel(ma_temp)
   #dev.off()
 } # end of function ----
@@ -1773,6 +1779,53 @@ three_level_bin(exposure_lab = "binary", outcome_lab = "Self-assessed health",
 ## Tobacco consumption
 three_level_bin(exposure_lab = "binary", outcome_lab = "Tobacco consumption",
                 out_meas = "OR")
+
+
+### test area for self-rated health -----
+
+
+## 3-L without grouping by exposure topic
+# works when not grouped, pooled OR is higher than standard MA
+df_srh <- ma_bin %>% filter(exposure_type == "binary" &
+                                outcome_cat=="Self-assessed health")
+ma_srh <- metagen(TE = ln_est, seTE = se2, sm = paste("OR"), 
+                    studlab = paste(study), 
+                    data = df_srh,
+                    #                     byvar= exposure_topic, 
+                    id = comp_id,
+                    comb.fixed = FALSE, comb.random = TRUE)
+
+ma_srh <- update.meta(ma_srh, 
+                      #byvar=exposure_topic, 
+                      bylab = "Exposure topic",
+                        comb.random = TRUE, comb.fixed = FALSE)
+
+#produce forest plot
+forest(x = ma_srh, 
+       leftcols = "studlab", overall = TRUE,
+       subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
+
+## 3-l, exposure topic grouping, exclude Virtanen 2011
+## this works - suggests Virtanen 2011 is the problem
+df_srh2 <- df_srh %>% 
+  filter(study_id!="SR040")
+
+ma_srh2 <- metagen(TE = ln_est, seTE = se2, sm = paste("OR"), 
+                  studlab = paste(study), 
+                  data = df_srh2,
+                  #                     byvar= exposure_topic, 
+                  id = comp_id,
+                  comb.fixed = FALSE, comb.random = TRUE)
+
+ma_srh2 <- update.meta(ma_srh2, 
+                      byvar=exposure_topic, 
+                      bylab = "Exposure topic",
+                      comb.random = TRUE, comb.fixed = FALSE)
+
+#produce forest plot
+forest(x = ma_srh2, 
+       leftcols = "studlab", overall = TRUE,
+       subgroup = TRUE, print.subgroup.labels = TRUE, study.results = TRUE)
 
 #### Continuous outcomes -------------------------------------------------------
 
@@ -1812,7 +1865,7 @@ three_level_cont <- function(exposure_lab, outcome_lab, out_meas, x_lab,
   
   # produce and save funnel plot
   #png(file = paste0("./charts/funnel_plots/continuous_outcomes/",outcome_lab,"_",exposure_lab,"_funnel.png"),
-  #    width = w, height = h)
+  #    width = 400, height = 400)
   #funnel(ma_temp2)
   #dev.off()
 } ## end of function ----#
@@ -1884,7 +1937,7 @@ forest_paper_sub1 <- function(exposure_lab, outcome_lab, out_meas,
   
   # produce and save funnel plot
   png(file = paste0("./charts/funnel_plots/supplementary/binary_outcomes/males_",outcome_lab,"_",exposure_lab,"_exp.png"),
-      width = w, height = h)
+      width = 400, height = 400)
   funnel(ma_temp)
   dev.off()
   
@@ -1951,7 +2004,7 @@ forest_paper_sub2 <- function(exposure_lab, outcome_lab, out_meas,
   
   # produce and save funnel plot
   #  png(file = paste0("./charts/funnel_plots/continuous_outcomes/",outcome_lab,"_",exposure_lab,"_funnel.png"),
-  #      width = w, height = h)
+  #      width = 400, height = 400)
   #  funnel(ma_temp2)
   #  dev.off()
 } # end of function ----
@@ -2014,7 +2067,7 @@ forest_paper_sub3 <- function(exposure_lab, outcome_lab, out_meas,
   
   # produce and save funnel plot
   png(file = paste0("./charts/funnel_plots/supplementary/binary_outcomes/females_",outcome_lab,"_",exposure_lab,"_exp.png"),
-      width = w, height = h)
+      width = 400, height = 400)
   funnel(ma_temp)
   dev.off()
   
@@ -2080,7 +2133,7 @@ forest_paper_sub4 <- function(exposure_lab, outcome_lab, out_meas,
   
   # produce and save funnel plot
   #  png(file = paste0("./charts/funnel_plots/continuous_outcomes/",outcome_lab,"_",exposure_lab,"_funnel.png"),
-  #      width = w, height = h)
+  #      width = 400, height = 400)
   #  funnel(ma_temp2)
   #  dev.off()
 } # end of function ----
@@ -2375,7 +2428,7 @@ forest_sa1 <- function(exposure_lab, outcome_lab, out_meas,
   
   # produce and save funnel plot
   #  png(file = paste0("./charts/funnel_plots/binary_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
-  #      width = w, height = h)
+  #      width = 400, height = 400)
   #  funnel(ma_temp)
   #  dev.off()
 } # end of function ----
@@ -2439,7 +2492,7 @@ forest_sa2 <- function(exposure_lab, outcome_lab, out_meas,
   
   # produce and save funnel plot
   #  png(file = paste0("./charts/funnel_plots/continuous_outcomes/sa_",outcome_lab,"_",exposure_lab,"_exp.png"),
-  #      width = w, height = h)
+  #      width = 400, height = 400)
   #  funnel(ma_temp)
   #  dev.off()
 } # end of function ----
