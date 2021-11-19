@@ -1049,6 +1049,8 @@ for (i in seq_along(ma_bin_list)) {
   dev.off()
 }
 
+write.csv(ma_bin, "./data/working/ma_bin.csv")
+
 #------------------------------------------------------------------------------#
 ##### Binary forest plots - publication versions  
 #------------------------------------------------------------------------------#
@@ -1207,7 +1209,7 @@ ma_cont <- ext_primary %>%
   # separate out cholesterol
   mutate(outcome_cat = ifelse(grepl("cholesterol", definition_of_outcome), "Cholesterol", outcome_cat))
 
-
+write.csv(ma_cont,"./data/working/ma_cont.csv")
 
 ma_cont_spine <- ma_cont %>%  select(pecos, outcome_measure, outcome_cat) %>% unique()
 cont_spine_length <- nrow(ma_cont_spine)
