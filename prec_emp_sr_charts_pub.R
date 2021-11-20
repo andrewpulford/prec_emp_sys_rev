@@ -99,10 +99,7 @@ three_level_cont <- function(exposure_lab, outcome_lab, out_meas,
 } ## end of function ----
 
 
-
-
-
-#produce and save forest plot
+#### produce and save forest plot  ---------------------------------------------
 forest1 <- function(datafile, 
                     datafile_lab,
                     w = 960, h = 960, type, 
@@ -135,7 +132,7 @@ forest1 <- function(datafile,
 
 
 #------------------------------------------------------------------------------#
-##### General health forest plots - publication versions  
+##### Figure 1: General health forest plots - publication versions  
 #------------------------------------------------------------------------------#
 
 #### Figure 1(a) - Self-rated health binary outcome ----------------------------
@@ -160,7 +157,7 @@ forest1(datafile = srh_bin,
 
 #### Figure 1(b) - Self-rated health continuous outcome ------------------------
 
-## meta-analyis
+## meta-analysis
 srh_cont <- three_level_cont(exposure_lab = "binary", outcome_lab = "Self-assessed health",
                  out_meas = "Regression coefficient") 
 
@@ -197,7 +194,7 @@ forest1(datafile = all_mort, datafile_lab = "1c_all_mort",
 
 
 #------------------------------------------------------------------------------#
-##### Mental health forest plots - publication versions  
+##### Figure 2: Mental health forest plots - publication versions  
 #------------------------------------------------------------------------------#
 
 #### (a) Poor mental health as a binary outcome --------------------------------
@@ -238,7 +235,7 @@ forest1(datafile = mh_cont, datafile_lab = "2b_mh_cont",
 
 
 #------------------------------------------------------------------------------#
-##### Physical health forest plots - publication versions  
+##### Figure 3: Physical health forest plots - publication versions  
 #------------------------------------------------------------------------------#
 
 #### (a) Cholesterol level -----------------------------------------------------
@@ -280,7 +277,7 @@ forest1(datafile = diastolic, datafile_lab = "3b_diastolic",
 ## funnel plot
 
 #------------------------------------------------------------------------------#
-##### Physical health forest plots - publication versions  
+##### Figure 4: Physical health forest plots - publication versions  
 #------------------------------------------------------------------------------#
 
 #### (a) Harmful alcohol consumption -------------------------------------------
@@ -332,12 +329,8 @@ forest1(datafile = smoking, datafile_lab = "4c_smoking",
 (c) Current smoking status",
         h=400)
 
-## funnel plot
+#------------------------------------------------------------------------------#
+##### Sub-group analyses - publication versions  
+#------------------------------------------------------------------------------#
 
-  # produce and save funnel plot
-#  png(file = paste0("./charts/funnel_plots/binary_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
-#      width = 400, height = 400)
-#  funnel(ma_temp)
-#  dev.off()
-#
  
