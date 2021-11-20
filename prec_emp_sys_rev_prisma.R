@@ -9,14 +9,16 @@ rm(list=ls())
 options(scipen=999)
 
 library(DiagrammeR)
+library(DiagrammeRsvg)
+library(magrittr)
+library(rsvg)
 
-
-grViz("
+prisma <- grViz("
 digraph {
   graph [ranksep = 0.2]
-  node [shape = box, width = 5]
+  node [shape = box, width = 5, fontname = arial, fontsize = 12]
     A [label = '21,407 studies imported for screening']
-    B [label = '8,476, duplicates removed']
+    B [label = '8,476 duplicates removed']
     C [label = '12,940 studies screened']
     D [label = '12,383 studies irrelevant']
     E [label = '555 full-text studies screened']
@@ -32,7 +34,7 @@ digraph {
     4   Unit of analysis not at individual or household
     1   The study population is not working-age adults
     1   Qualitative study']
-    G [label = '50 studies included                 ']
+    G [label = '50 studies included']
   edge [minlen = 2]
     A->B
     A->C
@@ -45,5 +47,11 @@ digraph {
   { rank = same; E; F }
 }
 ")
+
+prisma %>% 
+  export_svg() %>% 
+  charToRaw() %>% 
+  rsvg_png("./charts/prec_emp_prisma.png")
+
 
 
