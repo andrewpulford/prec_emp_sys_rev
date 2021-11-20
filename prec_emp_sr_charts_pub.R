@@ -14,9 +14,9 @@ options(scipen=999)
 
 ## install packages
 library(tidyverse) # all kinds of stuff 
-library(readxl) # for reading excel file and all data sheets
-library(writexl)
-library(janitor) # for sorting out variable names etc
+#library(readxl) # for reading excel file and all data sheets
+#library(writexl)
+#library(janitor) # for sorting out variable names etc
 # install latest version of meta to allow three-level forest plot production
 #install.packages("devtools")
 devtools::install_github("guido-s/meta")
@@ -118,6 +118,7 @@ forest1 <- function(datafile,
          label.left = lab_left,
          label.right = lab_right, 
          text.addline1 = textline,
+         fs.addline = 18,
          xlab = x_lab)
   dev.off()  
    
@@ -146,7 +147,7 @@ srh_bin <- ungrouped_bin(exposure_lab = "binary",
 
 ## forest plot
 forest1(datafile = srh_bin, 
-                          datafile_lab = "srh_bin",
+                          datafile_lab = "1a_srh_bin",
                           h = 480, w = 960,
                           textline = "
                       
@@ -164,7 +165,7 @@ srh_cont <- three_level_cont(exposure_lab = "binary", outcome_lab = "Self-assess
                  out_meas = "Regression coefficient") 
 
 ## forest plot
-forest1(datafile = srh_cont, datafile_lab = "srh_cont", 
+forest1(datafile = srh_cont, datafile_lab = "1b_srh_cont", 
         textline = "
                            
                            
@@ -172,7 +173,7 @@ forest1(datafile = srh_cont, datafile_lab = "srh_cont",
         x_lab = "Difference in five-point self-rated health scale",
         w = 1100, h = 600,
         lab_left = "Favours unexposed", 
-        lab_right = "Favours exposed",)
+        lab_right = "Favours exposed")
 
 ## funnel plot
 
@@ -184,7 +185,7 @@ all_mort <- three_level_bin(exposure_lab = "binary",
                             out_meas = "OR")
 
 ## forest plot
-forest1(datafile = all_mort, datafile_lab = "all_mort",
+forest1(datafile = all_mort, datafile_lab = "1c_all_mort",
         textline = "
                            
 
@@ -207,7 +208,7 @@ mh_bin <- three_level_bin(exposure_lab = "binary",
                             out_meas = "OR")
 
 ## forest plot
-forest1(datafile = mh_bin, datafile_lab = "mh_bin",
+forest1(datafile = mh_bin, datafile_lab = "2a_mh_bin",
         textline = "
                            
 
@@ -221,12 +222,13 @@ forest1(datafile = mh_bin, datafile_lab = "mh_bin",
 ####     CES-D scale --------------------------------
 
 ## meta-analysis
-mh_cont <- three_level_cont(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
+mh_cont <- three_level_cont(exposure_lab = "binary", 
+                            outcome_lab = "Mental health symptoms",
                 out_meas = "Regression coefficient")
 
 
 ## forest plot
-forest1(datafile = mh_cont, datafile_lab = "ma_cont",
+forest1(datafile = mh_cont, datafile_lab = "2b_mh_cont",
         textline = "
                            
 
@@ -235,8 +237,102 @@ forest1(datafile = mh_cont, datafile_lab = "ma_cont",
         h = 300)
 
 
+#------------------------------------------------------------------------------#
+##### Physical health forest plots - publication versions  
+#------------------------------------------------------------------------------#
+
+#### (a) Cholesterol level -----------------------------------------------------
+
+## meta-analysis
+cholesterol <- three_level_cont(exposure_lab = "binary", 
+                                outcome_lab = "Cholesterol",
+                                out_meas = "Adjusted mean difference")
+
+## forest plot
+forest1(datafile = cholesterol, datafile_lab = "3a_cholesterol",
+        textline = "
+                           
+
+(a) Cholesterol level",
+        x_lab = "Adjusted mean difference in cholesterol (mmol)",
+        h = 400)
+
+## funnel plot
+
+#### (b) Diastolic blood pressure ----------------------------------------------
+
+## meta-analysis
+
+diastolic <- three_level_cont(exposure_lab = "binary", 
+                              outcome_lab = "Diastolic blood pressure",
+                              out_meas = "Adjusted mean difference")
+
+## forest plot
+
+forest1(datafile = diastolic, datafile_lab = "3b_diastolic",
+        textline = "
+                           
+
+(b) Diastolic blood pressure",
+        x_lab = "Adjusted mean difference in diastolic blood pressure (mmHg)",
+        h = 400)
+
+## funnel plot
+
+#------------------------------------------------------------------------------#
+##### Physical health forest plots - publication versions  
+#------------------------------------------------------------------------------#
+
+#### (a) Harmful alcohol consumption -------------------------------------------
+
+## meta-analysis
+alcohol <- three_level_bin(exposure_lab = "binary", 
+                           outcome_lab = "Alcohol consumption",
+                           out_meas = "OR")
+
+## forest plot
+forest1(datafile = alcohol, datafile_lab = "4a_alcohol",
+        textline = "
 
 
+(a) Harmful alcohol consumption",
+        h=400)
+
+## funnel plot
+
+#### (b) Body mass index -------------------------------------------------------
+
+## meta-analysis
+bmi <- three_level_cont(exposure_lab = "binary", outcome_lab = "BMI",
+                        out_meas = "Adjusted mean difference")
+
+## forest plot
+forest1(datafile = bmi, datafile_lab = "4b_bmi",
+        textline = "
+                           
+
+(b) Body mass index",
+x_lab = "Adjusted mean difference in body mass index",
+h = 400)
+
+## funnel plot
+
+#### (c) Current smoking status ------------------------------------------------
+
+## meta-analysis
+smoking <- three_level_bin(exposure_lab = "binary", outcome_lab = "Tobacco consumption",
+                           out_meas = "OR")
+
+
+## forest plot
+forest1(datafile = smoking, datafile_lab = "4c_smoking",
+        textline = "
+
+
+(c) Current smoking status",
+        h=400)
+
+## funnel plot
 
   # produce and save funnel plot
 #  png(file = paste0("./charts/funnel_plots/binary_outcomes/",outcome_lab,"_",exposure_lab,"_exp.png"),
