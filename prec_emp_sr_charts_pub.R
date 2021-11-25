@@ -333,4 +333,141 @@ forest1(datafile = smoking, datafile_lab = "4c_smoking",
 ##### Sub-group analyses - publication versions  
 #------------------------------------------------------------------------------#
 
- 
+### load data
+# males binary outcomes
+males_bin <- read.csv("./data/working/males_bin.csv") %>% 
+  group_by(sex, comparator_group) %>% 
+  mutate(comp_id = paste0(sex,", ",comparator_group)) %>% 
+  ungroup()
+
+# males binary outcomes
+males_cont <- read.csv("./data/working/males_cont.csv") %>% 
+  group_by(sex, comparator_group) %>% 
+  mutate(comp_id = paste0(sex,", ",comparator_group)) %>% 
+  ungroup()
+
+# males binary outcomes
+females_bin <- read.csv("./data/working/females_bin.csv") %>% 
+  group_by(sex, comparator_group) %>% 
+  mutate(comp_id = paste0(sex,", ",comparator_group)) %>% 
+  ungroup()
+
+# males binary outcomes
+females_cont <- read.csv("./data/working/females_cont.csv") %>% 
+  group_by(sex, comparator_group) %>% 
+  mutate(comp_id = paste0(sex,", ",comparator_group)) %>% 
+  ungroup()
+
+#### Figure S5.1: general health -----------------------------------------------
+
+### (a) Poor self-rated health as a binary outcome (male)
+
+## meta-analysis
+srh_bin_m <- ungrouped_bin(exposure_lab = "binary", 
+                         outcome_lab = "Self-assessed health",
+                         out_meas = "OR")
+
+## forest plot
+forest1(datafile = srh_bin, 
+        datafile_lab = "1a_srh_bin",
+        h = 480, w = 960,
+        textline = "
+                      
+                           
+(a) Poor self-rated health as a binary outcome")
+
+### (b) Poor self-rated health as a binary outcome (female) ********************
+
+## meta-analysis
+
+## forest plot
+
+### (c) All-cause mortality (male)
+
+## meta-analysis
+
+## forest plot
+
+### (d) All-cause mortality (female)
+
+## meta-analysis
+
+## forest plot
+
+#### Figure S5.2: mental health ------------------------------------------------
+
+### (a) Poor mental health as a binary outcome (male)
+
+## meta-analysis
+
+## forest plot
+
+### (b) Poor mental health as a binary outcome (female)
+
+## meta-analysis
+
+## forest plot
+
+#### Figure S5.3: physical health ----------------------------------------------
+
+### (a) Cholesterol level (male)
+
+## meta-analysis
+
+## forest plot
+
+### (b) Cholesterol level (female)
+
+## meta-analysis
+
+## forest plot
+
+### (c) Diastolic blood pressure (male)
+
+## meta-analysis
+
+## forest plot
+
+### (d) Diastolic blood pressure (female)
+
+## meta-analysis
+
+## forest plot
+
+#### Figure S5.4: health behaviours --------------------------------------------
+
+### (a) Harmful alcohol consumption (male)
+
+## meta-analysis
+
+## forest plot
+
+### (b) Harmful alcohol consumption (female)
+
+## meta-analysis
+
+## forest plot
+
+### (c) Body mass index (male)
+
+## meta-analysis
+
+## forest plot
+
+### (d) Body mass index (female)
+
+## meta-analysis
+
+## forest plot
+
+### (e) Current smoking status (male)
+
+## meta-analysis
+
+## forest plot
+
+### (f) Current smoking status (female)
+
+## meta-analysis
+
+## forest plot
