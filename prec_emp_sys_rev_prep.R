@@ -1337,7 +1337,6 @@ males <- ext_fin3 %>% filter(sex=="Male") %>%
          ma = ifelse(pecos_total>=2, 1, 0)) %>% arrange(pecos) %>% 
   ungroup()
 
-
 #### binary outcomes ---------
 
 males_bin <- males %>% 
@@ -1371,6 +1370,9 @@ males_bin <- males %>%
   filter(first_author != "Cross, J") %>% 
   # add additional info for Dobson (heavy/light smoker)
   mutate(study = ifelse(first_author=="Dobson, K", paste0(study,"; ",definition_of_outcome), study))
+
+write.csv(males_bin, "./data/working/males_bin.csv")
+
 
 ### Function for MA/forest plots to be included in sub-group analysis ----
 forest_paper_sub1 <- function(exposure_lab, outcome_lab, out_meas,
@@ -1464,6 +1466,8 @@ males_cont <- males %>%
   mutate(outcome_cat = ifelse(grepl("diastolic", definition_of_outcome), "Diastolic blood pressure", outcome_cat)) %>% 
   # separate out cholesterol
   mutate(outcome_cat = ifelse(grepl("cholesterol", definition_of_outcome), "Cholesterol", outcome_cat))
+
+write.csv(males_cont, "./data/working/males_cont.csv")
 
 ### Function for MA/forest plots to be included in paper ----
 forest_paper_sub2 <- function(exposure_lab, outcome_lab, out_meas,
@@ -1564,6 +1568,8 @@ females_bin <- females %>%
   # add additional info for Dobson (heavy/light smoker)
   mutate(study = ifelse(first_author=="Dobson, K", paste0(study,"; ",definition_of_outcome), study))
 
+write.csv(females_bin, "./data/working/females_bin.csv")
+
 ### Function for MA/forest plots to be included in sub-group analysis ----
 forest_paper_sub3 <- function(exposure_lab, outcome_lab, out_meas,
                               w = 960, h = 480, type){
@@ -1655,6 +1661,8 @@ females_cont <- females %>%
   mutate(outcome_cat = ifelse(grepl("diastolic", definition_of_outcome), "Diastolic blood pressure", outcome_cat)) %>% 
   # separate out cholesterol
   mutate(outcome_cat = ifelse(grepl("cholesterol", definition_of_outcome), "Cholesterol", outcome_cat))
+
+write.csv(females_cont, "./data/working/females_cont.csv")
 
 ### Function for MA/forest plots to be included in paper ----
 forest_paper_sub4 <- function(exposure_lab, outcome_lab, out_meas,
