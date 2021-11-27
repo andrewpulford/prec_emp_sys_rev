@@ -2039,8 +2039,8 @@ forest_paper_sub2(exposure_lab = "binary", outcome_lab = "BMI",
 #                  out_meas = "Regression coefficient")
 
 ## Self-assessed health ====> won't run
-forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
-                  out_meas = "Regression coefficient", w = 1000, h = 600)
+#forest_paper_sub2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
+#                  out_meas = "Regression coefficient", w = 1000, h = 600)
 
 #------------------------------------------------------------------------------#
 #### Females 
@@ -2410,6 +2410,8 @@ sa_ma_bin <- ma_bin %>%
   left_join(rob_fin_global) %>% # add in risk of bias score
   filter(global_rating != 3)
 
+write.csv(sa_ma_bin, "./data/working/sa_ma_bin.csv")
+
 ### Function for MA/forest plots to be included in paper ----
 forest_sa1 <- function(exposure_lab, outcome_lab, out_meas,
                        w = 960, h = 480, type){
@@ -2474,6 +2476,9 @@ sa_ma_cont <- ma_cont %>%
   left_join(rob_fin_global) %>% # add in risk of bias score
   filter(global_rating != 3)
 
+write.csv(sa_ma_cont, "./data/working/sa_ma_cont.csv")
+
+
 ### Function for MA/forest plots to be included in paper ----
 forest_sa2 <- function(exposure_lab, outcome_lab, out_meas,
                        w = 960, h = 480, type){
@@ -2528,6 +2533,7 @@ forest_sa2(exposure_lab = "binary", outcome_lab = "Mental health symptoms",
 ## Self-assessed health ====> check Cross (2009)
 forest_sa2(exposure_lab = "binary", outcome_lab = "Self-assessed health",
            out_meas = "Regression coefficient", w = 1000, h = 600)
+
 
 
 
