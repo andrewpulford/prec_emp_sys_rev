@@ -81,6 +81,19 @@ ungrouped_bin <- function(exposure_lab, outcome_lab, out_meas,
                      fixed = FALSE, random = TRUE)
 } # end of function ----
 
+### MA for individual exposure topic with binary outcome ----
+indiv_expos_bin <- function(exposure_tp, exposure_lab, outcome_lab, out_meas){
+  df_temp <- df_temp %>% filter(exposure_topic==exposure_tp &
+                                  exposure_type == exposure_lab &
+                                  outcome_cat==outcome_lab)
+  ma_temp <- metagen(TE = ln_est, seTE = se2, sm = paste(out_meas), 
+                     studlab = paste(study), 
+                     data = df_temp,
+#                     id = comp_id,
+                     fixed = FALSE, random = TRUE)
+} # end of function ----
+
+
 #### Continuous outcomes -------------------------------------------------------
 ### Main function for three-level MA with continuous outcome ----
 ### Function for MA/forest plots to be included in paper ----
@@ -332,7 +345,59 @@ forest1(datafile = smoking, datafile_lab = "4c_smoking",
 (c) Current smoking status",
         h=420)
 
-rm(df_temp, df_temp2)
+#rm(df_temp, df_temp2)
+
+
+
+#------------------------------------------------------------------------------#
+#####  Self-rated health exposure stratified - publication versions  
+#------------------------------------------------------------------------------#
+
+## this is for outcomes that could not be run as three-level MAs grouped by 
+## exposure type due to at least one exposure consisting of one study with 
+## multiple data points all using the same reference group
+
+#### Figure S5.1: poor self-rated health by persistent perceived job security --
+srh_perceived <- indiv_expos_bin(exposure_tp = "Perceived job security",
+                exposure_lab = "binary", 
+                outcome_lab = "Self-assessed health",
+                out_meas = "OR")
+
+## forest plot
+forest1(datafile = srh_perceived, 
+        datafile_lab = "S5.1_srh_perceived_bin",
+        h = 180, w = 960)
+
+
+
+#### Figure S5.2: poor self-rated health by persistent employment contract -----
+srh_contract <- indiv_expos_bin(exposure_tp = "Employment contract",
+                                 exposure_lab = "binary", 
+                                 outcome_lab = "Self-assessed health",
+                                 out_meas = "OR")
+
+## forest plot
+forest1(datafile = srh_contract, 
+        datafile_lab = "S5.2_srh_contract_bin",
+        h = 220, w = 960)
+
+
+
+#### Figure S5.3: poor self-rated health by persistent multi-dimensional measure
+#                 of precarious employment -------------------------------------
+srh_multiple <- indiv_expos_bin(exposure_tp = "Multiple",
+                                exposure_lab = "binary", 
+                                outcome_lab = "Self-assessed health",
+                                out_meas = "OR")
+
+## forest plot
+forest1(datafile = srh_multiple, 
+        datafile_lab = "S5.3_srh_multiple_bin",
+        h = 220, w = 960)
+
+
+
+
 
 #------------------------------------------------------------------------------#
 ##### Sub-group analyses - publication versions  
@@ -364,7 +429,7 @@ females_cont <- read.csv("./data/working/females_cont.csv") %>%
   ungroup()
 
 
-#### Figure S5.1: general health -----------------------------------------------
+#### Figure S6.1: general health -----------------------------------------------
 
 ### (a) Poor self-rated health as a binary outcome (male)
 df_temp <- males_bin
@@ -375,7 +440,7 @@ srh_bin_m <- ungrouped_bin(exposure_lab = "binary",
 
 ## forest plot
 forest1(datafile = srh_bin_m, 
-        datafile_lab = "S5.1a_srh_bin",
+        datafile_lab = "S6.1a_srh_bin",
         h = 300, w = 960,
         textline = "
                       
@@ -394,7 +459,7 @@ srh_bin_f <- ungrouped_bin(exposure_lab = "binary",
 
 ## forest plot
 forest1(datafile = srh_bin_f, 
-        datafile_lab = "S5.1b_srh_bin",
+        datafile_lab = "S6.1b_srh_bin",
         h = 300, w = 960,
         textline = "
                       
@@ -413,7 +478,7 @@ all_mort_m <- three_level_bin(exposure_lab = "binary",
                             out_meas = "OR")
 
 ## forest plot
-forest1(datafile = all_mort_m, datafile_lab = "S5.1c_all_mort",
+forest1(datafile = all_mort_m, datafile_lab = "S6.1c_all_mort",
         textline = "
                            
 
@@ -434,7 +499,7 @@ all_mort_m <- three_level_bin(exposure_lab = "binary",
                               out_meas = "OR")
 
 ## forest plot
-forest1(datafile = all_mort_m, datafile_lab = "S5.1d_all_mort",
+forest1(datafile = all_mort_m, datafile_lab = "S6.1d_all_mort",
         textline = "
                            
 
@@ -446,7 +511,7 @@ forest1(datafile = all_mort_m, datafile_lab = "S5.1d_all_mort",
 
 rm(df_temp)
 
-#### Figure S5.2: mental health ------------------------------------------------
+#### Figure S6.2: mental health ------------------------------------------------
 
 ### (a) Poor mental health as a binary outcome (male)
 df_temp <- males_bin
@@ -457,7 +522,7 @@ mh_bin_m <- three_level_bin(exposure_lab = "binary",
                           out_meas = "OR")
 
 ## forest plot
-forest1(datafile = mh_bin_m, datafile_lab = "S5.2a_mh_bin",
+forest1(datafile = mh_bin_m, datafile_lab = "S6.2a_mh_bin",
         textline = "
                            
 
@@ -478,7 +543,7 @@ mh_bin_f <- three_level_bin(exposure_lab = "binary",
                             out_meas = "OR")
 
 ## forest plot
-forest1(datafile = mh_bin_f, datafile_lab = "S5.2b_mh_bin",
+forest1(datafile = mh_bin_f, datafile_lab = "S6.2b_mh_bin",
         textline = "
                            
 
@@ -488,7 +553,7 @@ forest1(datafile = mh_bin_f, datafile_lab = "S5.2b_mh_bin",
 
 rm(df_temp)
 
-#### Figure S5.3: physical health ----------------------------------------------
+#### Figure S6.3: physical health ----------------------------------------------
 ### (a) Cholesterol level (male)
 df_temp2 <- males_cont
 
@@ -498,7 +563,7 @@ cholesterol_m <- three_level_cont(exposure_lab = "binary",
                                 out_meas = "Adjusted mean difference")
 
 ## forest plot
-forest1(datafile = cholesterol_m, datafile_lab = "S5.3a_cholesterol",
+forest1(datafile = cholesterol_m, datafile_lab = "S6.3a_cholesterol",
         textline = "
                            
 
@@ -520,7 +585,7 @@ cholesterol_f <- three_level_cont(exposure_lab = "binary",
                                   out_meas = "Adjusted mean difference")
 
 ## forest plot
-forest1(datafile = cholesterol_f, datafile_lab = "S5.3b_cholesterol",
+forest1(datafile = cholesterol_f, datafile_lab = "S6.3b_cholesterol",
         textline = "
                            
 
@@ -540,7 +605,7 @@ diastolic_m <- three_level_cont(exposure_lab = "binary",
 
 ## forest plot
 
-forest1(datafile = diastolic_m, datafile_lab = "S5.3c_diastolic",
+forest1(datafile = diastolic_m, datafile_lab = "S6.3c_diastolic",
         textline = "
                            
 
@@ -562,7 +627,7 @@ diastolic_f <- three_level_cont(exposure_lab = "binary",
 
 ## forest plot
 
-forest1(datafile = diastolic_f, datafile_lab = "S5.3d_diastolic",
+forest1(datafile = diastolic_f, datafile_lab = "S6.3d_diastolic",
         textline = "
                            
 
@@ -574,7 +639,7 @@ forest1(datafile = diastolic_f, datafile_lab = "S5.3d_diastolic",
 
 rm(df_temp)
 
-#### Figure S5.4: health behaviours --------------------------------------------
+#### Figure S6.4: health behaviours --------------------------------------------
 
 ### (a) Harmful alcohol consumption (male)
 df_temp <- males_bin
@@ -585,7 +650,7 @@ alcohol_m <- three_level_bin(exposure_lab = "binary",
                            out_meas = "OR")
 
 ## forest plot
-forest1(datafile = alcohol_m, datafile_lab = "S5.4a_alcohol",
+forest1(datafile = alcohol_m, datafile_lab = "S6.4a_alcohol",
         textline = "
 
 
@@ -603,7 +668,7 @@ alcohol_f <- three_level_bin(exposure_lab = "binary",
                              out_meas = "OR")
 
 ## forest plot
-forest1(datafile = alcohol_f, datafile_lab = "S5.4b_alcohol",
+forest1(datafile = alcohol_f, datafile_lab = "S6.4b_alcohol",
         textline = "
 
 
@@ -620,7 +685,7 @@ bmi_m <- three_level_cont(exposure_lab = "binary", outcome_lab = "BMI",
                         out_meas = "Adjusted mean difference")
 
 ## forest plot
-forest1(datafile = bmi_m, datafile_lab = "S5.4c_bmi",
+forest1(datafile = bmi_m, datafile_lab = "S6.4c_bmi",
         textline = "
                            
 
@@ -638,7 +703,7 @@ bmi_f <- three_level_cont(exposure_lab = "binary", outcome_lab = "BMI",
                           out_meas = "Adjusted mean difference")
 
 ## forest plot
-forest1(datafile = bmi_f, datafile_lab = "S5.4d_bmi",
+forest1(datafile = bmi_f, datafile_lab = "S6.4d_bmi",
         textline = "
                            
 
@@ -657,7 +722,7 @@ smoking_m <- three_level_bin(exposure_lab = "binary", outcome_lab = "Tobacco con
 
 
 ## forest plot
-forest1(datafile = smoking_m, datafile_lab = "S5.4e_smoking",
+forest1(datafile = smoking_m, datafile_lab = "S6.4e_smoking",
         textline = "
 
 
@@ -676,7 +741,7 @@ smoking_f <- three_level_bin(exposure_lab = "binary", outcome_lab = "Tobacco con
 
 
 ## forest plot
-forest1(datafile = smoking_f, datafile_lab = "S5.4f_smoking",
+forest1(datafile = smoking_f, datafile_lab = "S6.4f_smoking",
         textline = "
 
 
@@ -685,6 +750,7 @@ forest1(datafile = smoking_f, datafile_lab = "S5.4f_smoking",
 
 
 rm(df_temp)
+
 
 
 #------------------------------------------------------------------------------#
@@ -699,7 +765,7 @@ df_temp <-  read.csv("./data/working/sa_ma_bin.csv")
 # continuous outcomes
 df_temp2 <- read.csv("./data/working/sa_ma_cont.csv")
 
-#### Figure S6.1(a) - Self-rated health binary outcome -------------------------
+#### Figure S7.1(a) - Self-rated health binary outcome -------------------------
 
 ## meta-analysis
 srh_bin_sa <- ungrouped_bin(exposure_lab = "binary", 
@@ -708,7 +774,7 @@ srh_bin_sa <- ungrouped_bin(exposure_lab = "binary",
 
 ## forest plot
 forest1(datafile = srh_bin_sa, 
-        datafile_lab = "S6.1a_srh_bin",
+        datafile_lab = "S7.1a_srh_bin",
         h = 300, w = 960,
         textline = "
                       
@@ -723,7 +789,7 @@ srh_cont_sa <- three_level_cont(exposure_lab = "binary", outcome_lab = "Self-ass
                              out_meas = "Regression coefficient") 
 
 ## forest plot
-forest1(datafile = srh_cont_sa, datafile_lab = "S6.1b_srh_cont", 
+forest1(datafile = srh_cont_sa, datafile_lab = "S7.1b_srh_cont", 
         textline = "
                            
                            
@@ -744,7 +810,7 @@ mh_bin_sa <- three_level_bin(exposure_lab = "binary",
                           out_meas = "OR")
 
 ## forest plot
-forest1(datafile = mh_bin_sa, datafile_lab = "S6.2a_mh_bin",
+forest1(datafile = mh_bin_sa, datafile_lab = "S7.2a_mh_bin",
         textline = "
                            
 
@@ -760,7 +826,7 @@ cholesterol_sa <- three_level_cont(exposure_lab = "binary",
                                 out_meas = "Adjusted mean difference")
 
 ## forest plot
-forest1(datafile = cholesterol_sa, datafile_lab = "S6.3a_cholesterol",
+forest1(datafile = cholesterol_sa, datafile_lab = "S7.3a_cholesterol",
         textline = "
                            
 
@@ -778,7 +844,7 @@ diastolic_sa <- three_level_cont(exposure_lab = "binary",
                               out_meas = "Adjusted mean difference")
 
 ## forest plot
-forest1(datafile = diastolic_sa, datafile_lab = "S6.3b_diastolic",
+forest1(datafile = diastolic_sa, datafile_lab = "S7.3b_diastolic",
         textline = "
                            
 
@@ -795,7 +861,7 @@ alcohol_sa <- three_level_bin(exposure_lab = "binary",
                            out_meas = "OR")
 
 ## forest plot
-forest1(datafile = alcohol_sa, datafile_lab = "S6.4a_alcohol",
+forest1(datafile = alcohol_sa, datafile_lab = "S7.4a_alcohol",
         textline = "
 
 
@@ -810,7 +876,7 @@ bmi_sa <- three_level_cont(exposure_lab = "binary", outcome_lab = "BMI",
                         out_meas = "Adjusted mean difference")
 
 ## forest plot
-forest1(datafile = bmi_sa, datafile_lab = "S6.4b_bmi",
+forest1(datafile = bmi_sa, datafile_lab = "S7.4b_bmi",
         textline = "
                            
 
@@ -828,7 +894,7 @@ smoking_sa <- three_level_bin(exposure_lab = "binary",
 
 
 ## forest plot
-forest1(datafile = smoking_sa, datafile_lab = "S6.4c_smoking",
+forest1(datafile = smoking_sa, datafile_lab = "S7.4c_smoking",
         textline = "
 
 
