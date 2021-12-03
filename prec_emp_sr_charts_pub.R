@@ -113,6 +113,7 @@ three_level_cont <- function(exposure_lab, outcome_lab, out_meas,
 
 
 #### produce and save forest plot  ---------------------------------------------
+#### png files ---------------
 forest1 <- function(datafile, 
                     datafile_lab,
                     w = 960, h = 960, type, 
@@ -131,17 +132,40 @@ forest1 <- function(datafile,
          fs.addline = 18,
          xlab = x_lab)
   dev.off()  
-   
+  
 } # end of function ---------
 
+#### pdf files ---------------
+forest2 <- function(datafile, 
+                    datafile_lab,
+                    pap = "a4r",
+                    w = 11.69, h = 8.27, 
+                    f_size = 8,
+                    type, 
+                    lab_left = "Favours exposed", 
+                    lab_right = "Favours unexposed",
+                    textline = "", x_lab = ""){
+
+  pdf(file = paste0("./charts/publication_versions/forest_plots/",datafile_lab,".pdf"),
+      paper = pap,
+      width=w, height=h)
+  forest(x = datafile,
+         leftcols = "studlab", overall = TRUE,
+         subgroup = TRUE, print.subgroup.labels = TRUE, 
+         study.results = TRUE, 
+         label.left = lab_left,
+         label.right = lab_right, 
+         fontsize=f_size, 
+         text.addline1 = textline,
+         fs.addline = 12,
+         xlab = x_lab)
+  dev.off()  
+  
+} # end of function ---------
 
 #  # produce and save funnel plot
 #  #funnel(ma_temp)
 #} # end of function ----
-
-
-
-
 
 
 #------------------------------------------------------------------------------#
@@ -167,6 +191,14 @@ forest1(datafile = srh_bin,
                            
 (a) Poor self-rated health as a binary outcome")
 
+forest2(datafile = srh_bin, 
+        datafile_lab = "1a_srh_bin",
+        textline = "
+                      
+                           
+(a) Poor self-rated health as a binary outcome")
+
+
 ## funnel plot
 
 
@@ -188,6 +220,16 @@ forest1(datafile = srh_cont, datafile_lab = "1b_srh_cont",
         lab_left = "Favours unexposed", 
         lab_right = "Favours exposed")
 
+
+forest2(datafile = srh_cont, datafile_lab = "1b_srh_cont", 
+        textline = "
+                           
+                           
+(b) Self-rated health as a continuous scale",
+        x_lab = "Difference in five-point self-rated health scale",
+        lab_left = "Favours unexposed", 
+        lab_right = "Favours exposed")
+
 ## funnel plot
 
 #### Figure 1(c) - all-cause mortality -----------------------------------------
@@ -204,6 +246,13 @@ forest1(datafile = all_mort, datafile_lab = "1c_all_mort",
 
 (c) All-cause mortality",
         h = 460)
+
+
+forest2(datafile = all_mort, datafile_lab = "1c_all_mort",
+        textline = "
+                           
+
+(c) All-cause mortality")
 
 
 ## funnel plot
@@ -228,6 +277,13 @@ forest1(datafile = mh_bin, datafile_lab = "2a_mh_bin",
 (a) Poor mental health as a binary outcome",
         h = 850)
 
+forest2(datafile = mh_bin, datafile_lab = "2a_mh_bin",
+        textline = "
+                           
+
+(a) Poor mental health as a binary outcome",
+        pap = "a4",
+        h = 11.69, w = 8.27, f_size = 6)
 
 ## funnel plot
 
@@ -248,6 +304,13 @@ forest1(datafile = mh_cont, datafile_lab = "2b_mh_cont",
 (b) Symptoms of poor mental health as a continuous outcome measure on the CES-D scale", 
                 x_lab = "Difference in CES-D scale",
         h = 300)
+
+forest2(datafile = mh_cont, datafile_lab = "2b_mh_cont",
+        textline = "
+                           
+
+(b) Symptoms of poor mental health as a continuous outcome measure on the CES-D scale", 
+        x_lab = "Difference in CES-D scale")
 
 
 #------------------------------------------------------------------------------#
@@ -270,6 +333,13 @@ forest1(datafile = cholesterol, datafile_lab = "3a_cholesterol",
         x_lab = "Adjusted mean difference in cholesterol (mmol)",
         h = 400)
 
+forest2(datafile = cholesterol, datafile_lab = "3a_cholesterol",
+        textline = "
+                           
+
+(a) Cholesterol level",
+        x_lab = "Adjusted mean difference in cholesterol (mmol)")
+
 ## funnel plot
 
 #### (b) Diastolic blood pressure ----------------------------------------------
@@ -289,6 +359,13 @@ forest1(datafile = diastolic, datafile_lab = "3b_diastolic",
 (b) Diastolic blood pressure",
         x_lab = "Adjusted mean difference in diastolic blood pressure (mmHg)",
         h = 400)
+
+forest2(datafile = diastolic, datafile_lab = "3b_diastolic",
+        textline = "
+                           
+
+(b) Diastolic blood pressure",
+        x_lab = "Adjusted mean difference in diastolic blood pressure (mmHg)")
 
 ## funnel plot
 
@@ -311,6 +388,12 @@ forest1(datafile = alcohol, datafile_lab = "4a_alcohol",
 (a) Harmful alcohol consumption",
         h=400)
 
+forest2(datafile = alcohol, datafile_lab = "4a_alcohol",
+        textline = "
+
+
+(a) Harmful alcohol consumption")
+
 ## funnel plot
 
 #### (b) Body mass index -------------------------------------------------------
@@ -328,6 +411,13 @@ forest1(datafile = bmi, datafile_lab = "4b_bmi",
 x_lab = "Adjusted mean difference in body mass index",
 h = 400)
 
+forest2(datafile = bmi, datafile_lab = "4b_bmi",
+        textline = "
+                           
+
+(b) Body mass index",
+        x_lab = "Adjusted mean difference in body mass index")
+
 ## funnel plot
 
 #### (c) Current smoking status ------------------------------------------------
@@ -335,7 +425,6 @@ h = 400)
 ## meta-analysis
 smoking <- three_level_bin(exposure_lab = "binary", outcome_lab = "Tobacco consumption",
                            out_meas = "OR")
-
 
 ## forest plot
 forest1(datafile = smoking, datafile_lab = "4c_smoking",
@@ -345,7 +434,11 @@ forest1(datafile = smoking, datafile_lab = "4c_smoking",
 (c) Current smoking status",
         h=420)
 
-#rm(df_temp, df_temp2)
+forest2(datafile = smoking, datafile_lab = "4c_smoking",
+        textline = "
+
+
+(c) Current smoking status")
 
 
 
@@ -368,6 +461,8 @@ forest1(datafile = srh_perceived,
         datafile_lab = "S5.1_srh_perceived_bin",
         h = 180, w = 960)
 
+forest2(datafile = srh_perceived, 
+        datafile_lab = "S5.1_srh_perceived_bin")
 
 
 #### Figure S5.2: poor self-rated health by persistent employment contract -----
@@ -381,6 +476,8 @@ forest1(datafile = srh_contract,
         datafile_lab = "S5.2_srh_contract_bin",
         h = 220, w = 960)
 
+forest2(datafile = srh_contract, 
+        datafile_lab = "S5.2_srh_contract_bin")
 
 
 #### Figure S5.3: poor self-rated health by persistent multi-dimensional measure
@@ -395,8 +492,10 @@ forest1(datafile = srh_multiple,
         datafile_lab = "S5.3_srh_multiple_bin",
         h = 220, w = 960)
 
+forest2(datafile = srh_multiple, 
+        datafile_lab = "S5.3_srh_multiple_bin")
 
-
+rm(df_temp, df_temp2)
 
 
 #------------------------------------------------------------------------------#
@@ -447,6 +546,13 @@ forest1(datafile = srh_bin_m,
                            
 (a) Male poor self-rated health as a binary outcome")
 
+forest2(datafile = srh_bin_m, 
+        datafile_lab = "S6.1a_srh_bin",
+        textline = "
+                      
+                           
+(a) Male poor self-rated health as a binary outcome")
+
 rm(df_temp)
 
 ### (b) Poor self-rated health as a binary outcome (female) 
@@ -461,6 +567,13 @@ srh_bin_f <- ungrouped_bin(exposure_lab = "binary",
 forest1(datafile = srh_bin_f, 
         datafile_lab = "S6.1b_srh_bin",
         h = 300, w = 960,
+        textline = "
+                      
+                           
+(b) Female poor self-rated health as a binary outcome")
+
+forest2(datafile = srh_bin_f, 
+        datafile_lab = "S6.1b_srh_bin",
         textline = "
                       
                            
@@ -485,6 +598,11 @@ forest1(datafile = all_mort_m, datafile_lab = "S6.1c_all_mort",
 (c) Male all-cause mortality",
         h = 300)
 
+forest2(datafile = all_mort_m, datafile_lab = "S6.1c_all_mort",
+        textline = "
+                           
+
+(c) Male all-cause mortality")
 
 ## funnel plot
 
@@ -506,6 +624,11 @@ forest1(datafile = all_mort_m, datafile_lab = "S6.1d_all_mort",
 (d) Female all-cause mortality",
         h = 300)
 
+forest2(datafile = all_mort_m, datafile_lab = "S6.1d_all_mort",
+        textline = "
+                           
+
+(d) Female all-cause mortality")
 
 ## funnel plot
 
@@ -529,6 +652,11 @@ forest1(datafile = mh_bin_m, datafile_lab = "S6.2a_mh_bin",
 (a) Male poor mental health as a binary outcome",
         h = 560)
 
+forest2(datafile = mh_bin_m, datafile_lab = "S6.2a_mh_bin",
+        textline = "
+                           
+
+(a) Male poor mental health as a binary outcome")
 
 ## funnel plot
 
@@ -549,6 +677,13 @@ forest1(datafile = mh_bin_f, datafile_lab = "S6.2b_mh_bin",
 
 (b) Female poor mental health as a binary outcome",
         h = 600)
+
+forest2(datafile = mh_bin_f, datafile_lab = "S6.2b_mh_bin",
+        textline = "
+                           
+
+(b) Female poor mental health as a binary outcome")
+
 ## forest plot
 
 rm(df_temp)
@@ -571,7 +706,12 @@ forest1(datafile = cholesterol_m, datafile_lab = "S6.3a_cholesterol",
         x_lab = "Adjusted mean difference in cholesterol (mmol)",
         h = 340)
 
-## forest plot
+forest2(datafile = cholesterol_m, datafile_lab = "S6.3a_cholesterol",
+        textline = "
+                           
+
+(a) Male cholesterol level",
+        x_lab = "Adjusted mean difference in cholesterol (mmol)")
 
 rm(df_temp2)
 
@@ -593,6 +733,13 @@ forest1(datafile = cholesterol_f, datafile_lab = "S6.3b_cholesterol",
         x_lab = "Adjusted mean difference in cholesterol (mmol)",
         h = 340)
 
+forest2(datafile = cholesterol_f, datafile_lab = "S6.3b_cholesterol",
+        textline = "
+                           
+
+(b) Female cholesterol level",
+        x_lab = "Adjusted mean difference in cholesterol (mmol)")
+
 rm(df_temp2)
 
 ### (c) Diastolic blood pressure (male)
@@ -604,7 +751,6 @@ diastolic_m <- three_level_cont(exposure_lab = "binary",
                               out_meas = "Adjusted mean difference")
 
 ## forest plot
-
 forest1(datafile = diastolic_m, datafile_lab = "S6.3c_diastolic",
         textline = "
                            
@@ -613,7 +759,13 @@ forest1(datafile = diastolic_m, datafile_lab = "S6.3c_diastolic",
         x_lab = "Adjusted mean difference in diastolic blood pressure (mmHg)",
         h = 340)
 
-## forest plot
+forest2(datafile = diastolic_m, datafile_lab = "S6.3c_diastolic",
+        textline = "
+                           
+
+(c) Male diastolic blood pressure",
+        x_lab = "Adjusted mean difference in diastolic blood pressure (mmHg)")
+
 
 rm(df_temp)
 
@@ -635,7 +787,12 @@ forest1(datafile = diastolic_f, datafile_lab = "S6.3d_diastolic",
         x_lab = "Adjusted mean difference in diastolic blood pressure (mmHg)",
         h = 340)
 
-## forest plot
+forest2(datafile = diastolic_f, datafile_lab = "S6.3d_diastolic",
+        textline = "
+                           
+
+(d) Male diastolic blood pressure",
+        x_lab = "Adjusted mean difference in diastolic blood pressure (mmHg)")
 
 rm(df_temp)
 
@@ -657,6 +814,12 @@ forest1(datafile = alcohol_m, datafile_lab = "S6.4a_alcohol",
 (a) Male harmful alcohol consumption",
         h=330)
 
+forest2(datafile = alcohol_m, datafile_lab = "S6.4a_alcohol",
+        textline = "
+
+
+(a) Male harmful alcohol consumption")
+
 rm(df_temp)
 
 ### (b) Harmful alcohol consumption (female)
@@ -674,6 +837,12 @@ forest1(datafile = alcohol_f, datafile_lab = "S6.4b_alcohol",
 
 (b) Female harmful alcohol consumption",
         h=335)
+
+forest2(datafile = alcohol_f, datafile_lab = "S6.4b_alcohol",
+        textline = "
+
+
+(b) Female harmful alcohol consumption")
 
 rm(df_temp2)
 
@@ -693,6 +862,13 @@ forest1(datafile = bmi_m, datafile_lab = "S6.4c_bmi",
         x_lab = "Adjusted mean difference in body mass index",
         h = 335)
 
+forest2(datafile = bmi_m, datafile_lab = "S6.4c_bmi",
+        textline = "
+                           
+
+(c) Male body mass index",
+        x_lab = "Adjusted mean difference in body mass index")
+
 rm(df_temp2)
 
 ### (d) Body mass index (female)
@@ -710,6 +886,13 @@ forest1(datafile = bmi_f, datafile_lab = "S6.4d_bmi",
 (d) Female body mass index",
         x_lab = "Adjusted mean difference in body mass index",
         h = 335)
+
+forest2(datafile = bmi_f, datafile_lab = "S6.4d_bmi",
+        textline = "
+                           
+
+(d) Female body mass index",
+        x_lab = "Adjusted mean difference in body mass index")
 
 rm(df_temp)
 
@@ -729,6 +912,11 @@ forest1(datafile = smoking_m, datafile_lab = "S6.4e_smoking",
 (e) Male current smoking status",
         h=335)
 
+forest2(datafile = smoking_m, datafile_lab = "S6.4e_smoking",
+        textline = "
+
+
+(e) Male current smoking status")
 
 rm(df_temp)
 
@@ -748,6 +936,11 @@ forest1(datafile = smoking_f, datafile_lab = "S6.4f_smoking",
 (f) Female current smoking status",
         h=335)
 
+forest2(datafile = smoking_f, datafile_lab = "S6.4f_smoking",
+        textline = "
+
+
+(f) Female current smoking status")
 
 rm(df_temp)
 
@@ -781,6 +974,12 @@ forest1(datafile = srh_bin_sa,
                            
 (a) Poor self-rated health as a binary outcome")
 
+forest2(datafile = srh_bin_sa, 
+        datafile_lab = "S7.1a_srh_bin",
+        textline = "
+                      
+                           
+(a) Poor self-rated health as a binary outcome")
 
 #### Figure 1(b) - Self-rated health continuous outcome ------------------------
 
@@ -799,6 +998,14 @@ forest1(datafile = srh_cont_sa, datafile_lab = "S7.1b_srh_cont",
         lab_left = "Favours unexposed", 
         lab_right = "Favours exposed")
 
+forest2(datafile = srh_cont_sa, datafile_lab = "S7.1b_srh_cont", 
+        textline = "
+                           
+                           
+(b) Self-rated health as a continuous scale",
+        x_lab = "Difference in five-point self-rated health scale",
+        lab_left = "Favours unexposed", 
+        lab_right = "Favours exposed")
 
 
 
@@ -818,6 +1025,13 @@ forest1(datafile = mh_bin_sa, datafile_lab = "S7.2a_mh_bin",
         h = 560)
 
 
+forest2(datafile = mh_bin_sa, datafile_lab = "S7.2a_mh_bin",
+        textline = "
+                           
+
+(a) Poor mental health as a binary outcome")
+
+
 #### Figure 3(a) Cholesterol level ---------------------------------------------
 
 ## meta-analysis
@@ -834,6 +1048,12 @@ forest1(datafile = cholesterol_sa, datafile_lab = "S7.3a_cholesterol",
         x_lab = "Adjusted mean difference in cholesterol (mmol)",
         h = 300)
 
+forest2(datafile = cholesterol_sa, datafile_lab = "S7.3a_cholesterol",
+        textline = "
+                           
+
+(a) Cholesterol level",
+        x_lab = "Adjusted mean difference in cholesterol (mmol)")
 
 #### Figure 3(b) Diastolic blood pressure ----------------------------------------------
 
@@ -852,6 +1072,13 @@ forest1(datafile = diastolic_sa, datafile_lab = "S7.3b_diastolic",
         x_lab = "Adjusted mean difference in diastolic blood pressure (mmHg)",
         h = 300)
 
+forest2(datafile = diastolic_sa, datafile_lab = "S7.3b_diastolic",
+        textline = "
+                           
+
+(b) Diastolic blood pressure",
+        x_lab = "Adjusted mean difference in diastolic blood pressure (mmHg)")
+
 
 #### Figure 4(a) Harmful alcohol consumption -----------------------------------
 
@@ -868,6 +1095,11 @@ forest1(datafile = alcohol_sa, datafile_lab = "S7.4a_alcohol",
 (a) Harmful alcohol consumption",
         h=300)
 
+forest2(datafile = alcohol_sa, datafile_lab = "S7.4a_alcohol",
+        textline = "
+
+
+(a) Harmful alcohol consumption")
 
 #### Figure 4(b) Body mass index -----------------------------------------------
 
@@ -884,6 +1116,12 @@ forest1(datafile = bmi_sa, datafile_lab = "S7.4b_bmi",
         x_lab = "Adjusted mean difference in body mass index",
         h = 300)
 
+forest2(datafile = bmi_sa, datafile_lab = "S7.4b_bmi",
+        textline = "
+                           
+
+(b) Body mass index",
+        x_lab = "Adjusted mean difference in body mass index")
 
 #### Figure 4(c) Current smoking status ----------------------------------------
 
@@ -900,5 +1138,11 @@ forest1(datafile = smoking_sa, datafile_lab = "S7.4c_smoking",
 
 (c) Current smoking status",
         h=300)
+
+forest2(datafile = smoking_sa, datafile_lab = "S7.4c_smoking",
+        textline = "
+
+
+(c) Current smoking status")
 
 rm(df_temp, df_temp2)
