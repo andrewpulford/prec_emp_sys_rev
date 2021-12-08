@@ -600,6 +600,8 @@ harvest_df <- read.csv("./data/working/extracted_primary_harvest.csv") %>%
   mutate(position = row_number()) %>% 
   ungroup()
 
+write.csv(harvest_df, "./data/working/prepared_primary_harvest.csv")
+
 #### general health ------------------
 ## number of dps by outcome category and effect direction
 harvest_df %>%
