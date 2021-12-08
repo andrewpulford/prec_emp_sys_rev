@@ -163,10 +163,63 @@ forest2 <- function(datafile,
   
 } # end of function ---------
 
-#  # produce and save funnel plot
-#  #funnel(ma_temp)
-#} # end of function ----
+#### produce and save funnel plots ---------------------------------------------
+funnels1 <- function(ma_name,funnel_lab){
 
+  ## png
+  png(file = paste0("./charts/publication_versions/funnel_plots/",funnel_lab,".png"),
+    width = 400, height = 400)
+  funnel(ma_name)
+  dev.off()
+
+  ##pdf
+  pdf(file = paste0("./charts/publication_versions/funnel_plots/",funnel_lab,".pdf"))
+  funnel(ma_name)
+  dev.off()
+} # end of function ----
+
+#### harvest plot function -----------------------------------------------------
+harvest1 <- function(outcome_topic, harvest_lab, h = 960, w){
+  harvest_temp <- harvest_df %>%
+    filter(outcome_topic_s==outcome_topic) %>% 
+    # reword SAH to SRH for plot
+    mutate(outcome_cat = ifelse(outcome_cat=="Self-assessed health",
+                                "Self-rated health", outcome_cat )) %>% 
+    ggplot(aes(x=position, y = height, fill = exposure_topic)) +
+    geom_col(width = 0.5) + 
+    #  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
+    xlim(0,56) +
+    facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+    scale_fill_discrete(name  ="Exposure topic:") +
+    theme_bw() +
+    theme(text = element_text(size=20),
+          axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank(),
+          axis.title.y=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank(),
+          panel.grid = element_blank(),
+          legend.position = "bottom",
+          strip.placement = "outside",
+          strip.text.y = element_text(size = 12),
+          strip.text.y.left = element_text(angle = 0)) +
+    guides(fill = guide_legend(nrow = 2, byrow = TRUE))
+  
+  # save as png 
+  png(file = paste0("./charts/publication_versions/harvest_plots/",harvest_lab,".png"),
+      width = w, height = h)
+  par(mar=c(5,3,2,2)+0.1) # removes margins
+  print(harvest_temp)
+  dev.off()
+  
+  ## save as pdf
+  pdf(file = paste0("./charts/publication_versions/harvest_plots/",harvest_lab,".pdf"))
+  par(mar=c(5,3,2,2)+0.1) # removes margins
+  print(harvest_temp)  
+  dev.off()  
+  
+} # end of function -----
 
 #------------------------------------------------------------------------------#
 ##### Figure 1: General health forest plots - publication versions  
@@ -200,7 +253,8 @@ forest2(datafile = srh_bin,
 
 
 ## funnel plot
-
+funnels1(ma_name = srh_bin,
+         funnel_lab = "S8.1_srh_bin")
 
 
 #### Figure 1(b) - Self-rated health continuous outcome ------------------------
@@ -231,6 +285,8 @@ forest2(datafile = srh_cont, datafile_lab = "1b_srh_cont",
         lab_right = "Favours exposed")
 
 ## funnel plot
+funnels1(ma_name = srh_cont,
+         funnel_lab = "S8.2_srh_cont")
 
 #### Figure 1(c) - all-cause mortality -----------------------------------------
 
@@ -256,6 +312,8 @@ forest2(datafile = all_mort, datafile_lab = "1c_all_mort",
 
 
 ## funnel plot
+funnels1(ma_name = all_mort,
+         funnel_lab = "S8.3_all_mort")
 
 
 #------------------------------------------------------------------------------#
@@ -286,6 +344,8 @@ forest2(datafile = mh_bin, datafile_lab = "2a_mh_bin",
         h = 11.69, w = 8.27, f_size = 6)
 
 ## funnel plot
+funnels1(ma_name = mh_bin,
+         funnel_lab = "S8.4_mh_bin")
 
 #### (b) Symptoms of poor mental health as a continuous outcome measure on the 
 ####     CES-D scale --------------------------------
@@ -340,7 +400,6 @@ forest2(datafile = cholesterol, datafile_lab = "3a_cholesterol",
 (a) Cholesterol level",
         x_lab = "Adjusted mean difference in cholesterol (mmol)")
 
-## funnel plot
 
 #### (b) Diastolic blood pressure ----------------------------------------------
 
@@ -367,7 +426,6 @@ forest2(datafile = diastolic, datafile_lab = "3b_diastolic",
 (b) Diastolic blood pressure",
         x_lab = "Adjusted mean difference in diastolic blood pressure (mmHg)")
 
-## funnel plot
 
 #------------------------------------------------------------------------------#
 ##### Figure 4: Physical health forest plots - publication versions  
@@ -394,7 +452,6 @@ forest2(datafile = alcohol, datafile_lab = "4a_alcohol",
 
 (a) Harmful alcohol consumption")
 
-## funnel plot
 
 #### (b) Body mass index -------------------------------------------------------
 
@@ -418,7 +475,6 @@ forest2(datafile = bmi, datafile_lab = "4b_bmi",
 (b) Body mass index",
         x_lab = "Adjusted mean difference in body mass index")
 
-## funnel plot
 
 #### (c) Current smoking status ------------------------------------------------
 
@@ -604,7 +660,6 @@ forest2(datafile = all_mort_m, datafile_lab = "S6.1c_all_mort",
 
 (c) Male all-cause mortality")
 
-## funnel plot
 
 rm(df_temp)
 
@@ -630,9 +685,8 @@ forest2(datafile = all_mort_m, datafile_lab = "S6.1d_all_mort",
 
 (d) Female all-cause mortality")
 
-## funnel plot
-
 rm(df_temp)
+
 
 #### Figure S6.2: mental health ------------------------------------------------
 
@@ -658,9 +712,8 @@ forest2(datafile = mh_bin_m, datafile_lab = "S6.2a_mh_bin",
 
 (a) Male poor mental health as a binary outcome")
 
-## funnel plot
-
 rm(df_temp)
+
 
 ### (b) Poor mental health as a binary outcome (female)
 df_temp <- females_bin
@@ -1146,3 +1199,38 @@ forest2(datafile = smoking_sa, datafile_lab = "S7.4c_smoking",
 (c) Current smoking status")
 
 rm(df_temp, df_temp2)
+
+
+#------------------------------------------------------------------------------#
+##### Harvest plots
+#------------------------------------------------------------------------------#
+
+## remove any existing objects from global environment except functions
+rm(list = setdiff(ls(), lsf.str()))
+
+# see Cochrane handbook ch12 and Ogilvie et al (2008) 
+# ext_primary df adapted to include harvest_dir var 08/02/2021:
+#     1 = negative outcome
+#     -1 = positive outcome
+
+# open harvest df
+harvest_df <- read.csv("./data/working/prepared_primary_harvest.csv") 
+
+#### general health ------------------------------------------------------------
+harvest1(outcome_topic = "General health", harvest_lab = "S4.1_gen_health",
+         h = 400) 
+
+#### mental health -------------------------------------------------------------
+harvest1(outcome_topic = "Mental health", harvest_lab = "S4.2_mental_health", 
+         h = 200) 
+
+#### physical health -----------------------------------------------------------
+harvest1(outcome_topic = "Physical health", harvest_lab = "S4.3_physical_health",
+         h = 960) 
+
+
+#### health behaviours ---------------------------------------------------------
+harvest1(outcome_topic = "Health behaviours", harvest_lab = "S4.4_health_behav",
+         h = 480, w = 960) 
+
+
