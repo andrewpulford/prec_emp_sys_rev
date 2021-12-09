@@ -14,6 +14,7 @@ options(scipen=999)
 
 ## install packages
 library(tidyverse) # all kinds of stuff 
+library(ggh4x)
 #library(readxl) # for reading excel file and all data sheets
 #library(writexl)
 #library(janitor) # for sorting out variable names etc
@@ -179,7 +180,9 @@ funnels1 <- function(ma_name,funnel_lab){
 } # end of function ----
 
 #### harvest plot function -----------------------------------------------------
-harvest1 <- function(outcome_topic, harvest_lab, h = 960, w){
+harvest1 <- function(outcome_topic, harvest_lab, 
+                     h, w= 960,  
+                     h2, w2 = 11.69){
   harvest_temp <- harvest_df %>%
     filter(outcome_topic_s==outcome_topic) %>% 
     # reword SAH to SRH for plot
@@ -189,7 +192,7 @@ harvest1 <- function(outcome_topic, harvest_lab, h = 960, w){
     geom_col(width = 0.5) + 
     #  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
     xlim(0,56) +
-    facet_grid(outcome_cat ~ harvest_lab, switch = "y") +
+    facet_grid(outcome_cat ~ harvest_lab, switch = "y", space = "free_y") +
     scale_fill_discrete(name  ="Exposure topic:") +
     theme_bw() +
     theme(text = element_text(size=20),
@@ -204,7 +207,9 @@ harvest1 <- function(outcome_topic, harvest_lab, h = 960, w){
           strip.placement = "outside",
           strip.text.y = element_text(size = 12),
           strip.text.y.left = element_text(angle = 0)) +
-    guides(fill = guide_legend(nrow = 2, byrow = TRUE))
+    guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
+    force_panelsizes(rows = 1,
+                     cols = 1)
   
   # save as png 
   png(file = paste0("./charts/publication_versions/harvest_plots/",harvest_lab,".png"),
@@ -214,12 +219,12 @@ harvest1 <- function(outcome_topic, harvest_lab, h = 960, w){
   dev.off()
   
   ## save as pdf
-  pdf(file = paste0("./charts/publication_versions/harvest_plots/",harvest_lab,".pdf"))
-  par(mar=c(5,3,2,2)+0.1) # removes margins
+  pdf(file = paste0("./charts/publication_versions/harvest_plots/",harvest_lab,".pdf"),
+      width = w2, height = 0.86*h2)
+#  par(mar=c(5,3,2,2)+0.1) # removes margins
   print(harvest_temp)  
-  dev.off()  
-  
-} # end of function -----
+  dev.off()
+  } # end of function -----
 
 #------------------------------------------------------------------------------#
 ##### Figure 1: General health forest plots - publication versions  
@@ -1218,19 +1223,19 @@ harvest_df <- read.csv("./data/working/prepared_primary_harvest.csv")
 
 #### general health ------------------------------------------------------------
 harvest1(outcome_topic = "General health", harvest_lab = "S4.1_gen_health",
-         h = 400) 
+         h = 400, h2 = 5) 
 
 #### mental health -------------------------------------------------------------
 harvest1(outcome_topic = "Mental health", harvest_lab = "S4.2_mental_health", 
-         h = 200) 
+         h = 200, h2 = 3) 
 
 #### physical health -----------------------------------------------------------
 harvest1(outcome_topic = "Physical health", harvest_lab = "S4.3_physical_health",
-         h = 960) 
+         h = 960, h2 = 12) 
 
 
 #### health behaviours ---------------------------------------------------------
 harvest1(outcome_topic = "Health behaviours", harvest_lab = "S4.4_health_behav",
-         h = 480, w = 960) 
+         h = 480, h2 = 6) 
 
 
