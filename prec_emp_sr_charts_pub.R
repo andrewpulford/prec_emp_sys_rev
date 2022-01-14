@@ -189,11 +189,11 @@ harvest1 <- function(outcome_topic, harvest_lab,
     mutate(outcome_cat = ifelse(outcome_cat=="Self-assessed health",
                                 "Self-rated health", outcome_cat )) %>% 
     ggplot(aes(x=position, y = height, fill = exposure_topic)) +
-    geom_col(width = 0.5) + 
+    geom_col(width = 0.5, col = "black") + 
     #  geom_text(aes(y = 1, label = study_id), angle = 90, hjust = 1) +
     xlim(0,56) +
     facet_grid(outcome_cat ~ harvest_lab, switch = "y", space = "free_y") +
-    scale_fill_discrete(name  ="Exposure topic:") +
+    scale_fill_grey(start=0,end=1, name ="Exposure topic:") +
     theme_bw() +
     theme(text = element_text(size=20),
           axis.title.x=element_blank(),
