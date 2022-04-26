@@ -1,0 +1,36 @@
+---
+title: "Figure 1: Forest plots presenting effect sizes and meta-analysis of selected general health outcomes by persistent precarious employment exposure"
+author: ""
+date: ""
+output: pdf_document
+classoption: landscape
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# packages
+library(tinytex)
+library(tidyverse)
+library(knitr)
+
+
+```
+
+
+```{r echo=FALSE, out.width="100%"}
+# images
+include_graphics("./charts/publication_versions/forest_plots/1a_srh_bin.png")
+```
+\newpage
+```{r echo=FALSE, out.width="100%"}
+
+include_graphics("./charts/publication_versions/forest_plots/1b_srh_cont.png")
+```
+\newpage
+```{r echo=FALSE, out.width="100%"}
+
+include_graphics("./charts/publication_versions/forest_plots/1c_all_mort.png")
+```
+
