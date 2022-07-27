@@ -9,6 +9,9 @@
 ## remove any existing objects from global environment
 rm(list=ls()) 
 
+par(mar=c(0, 0, 0, 0)) # removes margins
+
+
 ## disable scientific notation printing
 options(scipen=999)
 
@@ -114,15 +117,16 @@ three_level_cont <- function(exposure_lab, outcome_lab, out_meas,
 
 
 #### produce and save forest plot  ---------------------------------------------
-#### png files ---------------
+#### tiff files ---------------
 forest1 <- function(datafile, 
                     datafile_lab,
                     w = 960, h = 960, type, 
                     lab_left = "Favours exposed", 
                     lab_right = "Favours unexposed",
                     textline = "", x_lab = ""){
-  png(file = paste0("./charts/publication_versions/forest_plots/",datafile_lab,".png"),
-      width = w, height = h)
+  tiff(file = paste0("./charts/publication_versions/forest_plots/",datafile_lab,".tiff"),
+      width = w, height = h, res = 300,                                                 # the margin error.
+      compression = c( "lzw"))
   forest(x = datafile,
          leftcols = "studlab", overall = TRUE,
          subgroup = TRUE, print.subgroup.labels = TRUE, 
@@ -133,7 +137,6 @@ forest1 <- function(datafile,
          fs.addline = 18,
          xlab = x_lab)
   dev.off()  
-  
 } # end of function ---------
 
 #### pdf files ---------------
@@ -167,8 +170,8 @@ forest2 <- function(datafile,
 #### produce and save funnel plots ---------------------------------------------
 funnels1 <- function(ma_name,funnel_lab){
 
-  ## png
-  png(file = paste0("./charts/publication_versions/funnel_plots/",funnel_lab,".png"),
+  ## tiff
+  tiff(file = paste0("./charts/publication_versions/funnel_plots/",funnel_lab,".tiff"),
     width = 400, height = 400)
   funnel(ma_name)
   dev.off()
@@ -211,17 +214,17 @@ harvest1 <- function(outcome_topic, harvest_lab,
     force_panelsizes(rows = 1,
                      cols = 1)
   
-  # save as png 
-  png(file = paste0("./charts/publication_versions/harvest_plots/",harvest_lab,".png"),
+  # save as tiff 
+  tiff(file = paste0("./charts/publication_versions/harvest_plots/",harvest_lab,".tiff"),
       width = w, height = h)
-  par(mar=c(5,3,2,2)+0.1) # removes margins
+  par(mar=c(4, 4, 0.1, 0.1)) # removes margins
   print(harvest_temp)
   dev.off()
   
   ## save as pdf
   pdf(file = paste0("./charts/publication_versions/harvest_plots/",harvest_lab,".pdf"),
       width = w2, height = 0.86*h2)
-#  par(mar=c(5,3,2,2)+0.1) # removes margins
+  par(mar=c(4, 4, 0.1, 0.1)) # removes margins
   print(harvest_temp)  
   dev.off()
   } # end of function -----
@@ -243,19 +246,18 @@ srh_bin <- ungrouped_bin(exposure_lab = "binary",
 ## forest plot
 forest1(datafile = srh_bin, 
                           datafile_lab = "1a_srh_bin",
-                          h = 480, w = 960,
-                          textline = "
-                      
-                           
-(a) Poor self-rated health as a binary outcome")
-
-forest2(datafile = srh_bin, 
-        datafile_lab = "1a_srh_bin",
+        w = 4500, h = 1500,
         textline = "
                       
                            
 (a) Poor self-rated health as a binary outcome")
 
+forest2(datafile = srh_bin, 
+        datafile_lab = "",
+        textline = "
+                      
+                           
+(a) Poor self-rated health as a binary outcome")
 
 ## funnel plot
 funnels1(ma_name = srh_bin,
@@ -275,7 +277,7 @@ forest1(datafile = srh_cont, datafile_lab = "1b_srh_cont",
                            
 (b) Self-rated health as a continuous scale",
         x_lab = "Difference in five-point self-rated health scale",
-        w = 1100, h = 600,
+        w = 4500, h = 2000,
         lab_left = "Favours unexposed", 
         lab_right = "Favours exposed")
 
@@ -288,6 +290,7 @@ forest2(datafile = srh_cont, datafile_lab = "1b_srh_cont",
         x_lab = "Difference in five-point self-rated health scale",
         lab_left = "Favours unexposed", 
         lab_right = "Favours exposed")
+
 
 ## funnel plot
 funnels1(ma_name = srh_cont,
@@ -302,12 +305,12 @@ all_mort <- three_level_bin(exposure_lab = "binary",
 
 ## forest plot
 forest1(datafile = all_mort, datafile_lab = "1c_all_mort",
+        w = 4500, h = 2000,
         textline = "
                            
 
-(c) All-cause mortality",
-        h = 460)
-
+(c) All-cause mortality")
+        
 
 forest2(datafile = all_mort, datafile_lab = "1c_all_mort",
         textline = "
@@ -319,6 +322,7 @@ forest2(datafile = all_mort, datafile_lab = "1c_all_mort",
 ## funnel plot
 funnels1(ma_name = all_mort,
          funnel_lab = "S8.3_all_mort")
+
 
 
 #------------------------------------------------------------------------------#
@@ -334,11 +338,11 @@ mh_bin <- three_level_bin(exposure_lab = "binary",
 
 ## forest plot
 forest1(datafile = mh_bin, datafile_lab = "2a_mh_bin",
+        w = 4500, h = 3400,
         textline = "
                            
 
-(a) Poor mental health as a binary outcome",
-        h = 850)
+(a) Poor mental health as a binary outcome")
 
 forest2(datafile = mh_bin, datafile_lab = "2a_mh_bin",
         textline = "
@@ -363,12 +367,12 @@ mh_cont <- three_level_cont(exposure_lab = "binary",
 
 ## forest plot
 forest1(datafile = mh_cont, datafile_lab = "2b_mh_cont",
+        w = 4500, h = 1200,
         textline = "
                            
 
 (b) Symptoms of poor mental health as a continuous outcome measure on the CES-D scale", 
-                x_lab = "Difference in CES-D scale",
-        h = 300)
+                x_lab = "Difference in CES-D scale")
 
 forest2(datafile = mh_cont, datafile_lab = "2b_mh_cont",
         textline = "
