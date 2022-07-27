@@ -1,5 +1,5 @@
 ---
-title: "Figure 2: Forest plots presenting effect sizes and meta-analysis of selected mental health outcomes by persistent precarious employment exposure"
+title: ""
 author: ""
 date: ""
 output: pdf_document
@@ -14,17 +14,19 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tinytex)
 library(tidyverse)
 library(knitr)
+library(magick)
+
 
 
 ```
 
 
-```{r echo=FALSE, out.width="100%"}
+```{r echo=FALSE, strip.white=TRUE, fig.asp = 2,out.width = "90%", out.height="90%"}
 # images
-include_graphics("./charts/publication_versions/forest_plots/2a_mh_bin.png")
+image_read("./charts/publication_versions/forest_plots/2a_mh_bin.tiff")
 ```
-\newpage
-```{r echo=FALSE, out.width="100%"}
 
-include_graphics("./charts/publication_versions/forest_plots/2b_mh_cont.png")
+```{r echo=FALSE, strip.white=TRUE, fig.asp = 2,out.width = "90%", out.height="90%"}
+
+image_read("./charts/publication_versions/forest_plots/2b_mh_cont.tiff")
 ```
