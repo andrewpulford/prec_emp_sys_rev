@@ -1,9 +1,10 @@
 ---
-title: "Figure 1: Forest plots presenting effect sizes and meta-analysis of selected general health outcomes by persistent precarious employment exposure"
+title: ""
 author: ""
 date: ""
+geometry: margin=0cm
 output: pdf_document
-classoption: landscape
+classoption: portrait
 
 ---
 
@@ -14,23 +15,24 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tinytex)
 library(tidyverse)
 library(knitr)
+library(magick)
 
 
 ```
 
 
-```{r echo=FALSE, out.width="100%"}
+```{r echo=FALSE, strip.white=TRUE, fig.asp = 2,out.width = "90%", out.height="90%"}
+par(mar=c(0,0,0,0))
 # images
-include_graphics("./charts/publication_versions/forest_plots/1a_srh_bin.png")
+image_read("./charts/publication_versions/forest_plots/1a_srh_bin.tiff")
+#include_graphics("./charts/publication_versions/forest_plots/1a_srh_bin.tiff")
 ```
-\newpage
-```{r echo=FALSE, out.width="100%"}
-
-include_graphics("./charts/publication_versions/forest_plots/1b_srh_cont.png")
+```{r echo=FALSE, strip.white=TRUE, fig.asp = 2,out.width = "90%", out.height="90%"}
+par(mar=c(0,20,0,0))
+image_read("./charts/publication_versions/forest_plots/1b_srh_cont.tiff")
 ```
-\newpage
-```{r echo=FALSE, out.width="100%"}
-
-include_graphics("./charts/publication_versions/forest_plots/1c_all_mort.png")
+```{r echo=FALSE, strip.white=TRUE, fig.asp = 2,out.width = "90%", out.height="90%"}
+par(mar=c(0,0,0,0))
+image_read("./charts/publication_versions/forest_plots/1c_all_mort.tiff")
 ```
 
