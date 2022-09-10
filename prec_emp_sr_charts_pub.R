@@ -367,18 +367,21 @@ mh_cont <- three_level_cont(exposure_lab = "binary",
 
 ## forest plot
 forest1(datafile = mh_cont, datafile_lab = "2b_mh_cont",
-        w = 4500, h = 1200,
+        w = 4500, h = 1300,
         textline = "
                            
 
-(b) Symptoms of poor mental health as a continuous outcome measure on the CES-D scale", 
+
+(b) Symptoms of poor mental health as a continuous outcome measure on the Center for Epidemiologic Depression
+    Scale (CES-D)", 
                 x_lab = "Difference in CES-D scale")
 
 forest2(datafile = mh_cont, datafile_lab = "2b_mh_cont",
         textline = "
                            
 
-(b) Symptoms of poor mental health as a continuous outcome measure on the CES-D scale", 
+
+        (b) Symptoms of poor mental health as a continuous outcome measure on the Center for Epidemiologic Depression Scale (CES-D)", 
         x_lab = "Difference in CES-D scale")
 
 
